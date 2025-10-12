@@ -74,7 +74,7 @@ async function createGIF() {
   }
 }
 
-// Add a button to trigger GIF creation
+// Add aa button to trigger GIF creation
 const createButton = document.createElement("button");
 createButton.textContent = "Create GIF";
 createButton.style.marginTop = "20px";
