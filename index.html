@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Browser-Based GIF Creator</title>
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- gif.js library for high-quality, client-side GIF encoding -->
+    <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -30,6 +34,20 @@
             border-radius: 8px;
             background-color: #21262d;
             border: 2px solid #30363d;
+        }
+        /* Custom progress bar style */
+        .progress-bar {
+            height: 8px;
+            background-color: #30363d;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #58a6ff;
+            transition: width 0.1s;
         }
     </style>
 </head>
@@ -69,8 +87,13 @@
             </button>
         </div>
 
-        <!-- Preview and Status Area -->
-        <div id="statusMessage" class="text-green-400 mb-4 h-6"></div>
+        <!-- Progress Bar and Status Area -->
+        <div id="progressArea" class="w-full max-w-2xl mb-4 hidden">
+            <p id="statusMessage" class="text-sm text-blue-400 mb-1 h-6"></p>
+            <div class="progress-bar w-full">
+                <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+            </div>
+        </div>
 
         <div id="framesContainer" class="w-full max-w-2xl bg-[#161b22] p-4 rounded-xl shadow-inner border border-[#30363d]">
             <h2 class="text-lg font-semibold mb-3 border-b border-gray-700 pb-2">Image Frames (<span id="frameCounter">0</span>)</h2>
@@ -104,102 +127,10 @@
         const downloadArea = document.getElementById('downloadArea');
         const downloadLink = document.getElementById('downloadLink');
         const gifPreview = document.getElementById('gifPreview');
+        const progressArea = document.getElementById('progressArea');
+        const progressFill = document.getElementById('progressFill');
 
-        let frames = []; // Stores image data for GIF generation
-
-        // --- GIF ENCODER IMPLEMENTATION (Simplified for client-side functionality) ---
-        class GIFEncoder {
-            constructor(width, height, delay) {
-                this.width = width;
-                this.height = height;
-                this.delay = delay;
-                this.frames = [];
-                this.finished = false;
-                this.data = [];
-            }
-
-            // Simple header
-            writeHeader() {
-                this.data.push(...'GIF89a'.split('').map(c => c.charCodeAt(0)));
-                this.writeShort(this.width);
-                this.writeShort(this.height);
-                this.data.push(0xf0); // Global color table, 16 colors (placeholder)
-                this.data.push(0x00); // Background color index
-                this.data.push(0x00); // Aspect ratio
-                // Placeholder Global Color Table (4 colors: white, gray, black, red)
-                this.data.push(0xFF, 0xFF, 0xFF, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00);
-            }
-
-            // Application Extension for Netscape looping
-            writeNetscapeExt() {
-                this.data.push(0x21, 0xFF, 0x0B); // Extension identifier, block size
-                this.data.push(...'NETSCAPE2.0'.split('').map(c => c.charCodeAt(0)));
-                this.data.push(0x03, 0x01); // Sub-block size, loop flag
-                this.writeShort(0x0000); // Loop count (0 means infinite)
-                this.data.push(0x00); // Terminator
-            }
-
-            // Graphic Control Extension (sets delay)
-            writeGCE() {
-                this.data.push(0x21, 0xF9, 0x04); // Extension identifier, block size
-                this.data.push(0x08); // Packed fields (no transparency, no user input, restore to previous state)
-                this.writeShort(Math.round(this.delay / 10)); // Delay in 1/100s of a sec
-                this.data.push(0x00, 0x00); // Transparent color index, Terminator
-            }
-            
-            // Image Descriptor
-            writeImageDesc() {
-                this.data.push(0x2C); // Image Separator
-                this.writeShort(0); // Image Left
-                this.writeShort(0); // Image Top
-                this.writeShort(this.width);
-                this.writeShort(this.height);
-                this.data.push(0x00); // Local color table (None)
-            }
-
-            // Write 2 bytes (short)
-            writeShort(value) {
-                this.data.push(value & 0xFF, (value >> 8) & 0xFF);
-            }
-
-            // Stub for writing frame data (Actual LZW compression is omitted for simplicity)
-            writeFrameData(imageData) {
-                 // In a real encoder, this is where LZW compression happens.
-                 // For this demonstration, we'll write a basic placeholder.
-                this.writeImageDesc();
-                this.data.push(0x08); // LZW minimum code size
-                // Write a single dummy data sub-block (2 bytes, 1 block)
-                this.data.push(0x02, 0x01, 0x00); 
-                this.data.push(0x00); // Block terminator
-            }
-
-            // Public interface
-            start() {
-                this.writeHeader();
-                this.writeNetscapeExt();
-                this.finished = false;
-            }
-
-            addFrame(canvasContext) {
-                if (this.finished) return;
-                
-                // Get image data from the canvas context
-                const imageData = canvasContext.getImageData(0, 0, this.width, this.height).data;
-                
-                // Set GCE delay for this frame
-                this.writeGCE(); 
-                
-                // Stub: Write frame data (Requires complex LZW compression which is omitted)
-                // We'll write a descriptor and a small dummy block to maintain GIF structure.
-                this.writeFrameData(imageData);
-            }
-
-            finish() {
-                this.data.push(0x3B); // GIF Trailer
-                this.finished = true;
-                return new Uint8Array(this.data);
-            }
-        }
+        let frames = []; // Stores canvas contexts for GIF generation
 
         // --- UTILITY FUNCTIONS ---
 
@@ -208,7 +139,8 @@
             frameCounter.textContent = frames.length;
             emptyMessage.style.display = hasFrames ? 'none' : 'block';
             
-            createGifButton.disabled = !hasFrames;
+            // Only enable creation if there's at least one frame
+            createGifButton.disabled = !hasFrames; 
             clearFramesButton.disabled = !hasFrames;
         }
 
@@ -233,14 +165,17 @@
         }
         
         function removeFrame(indexToRemove) {
+            // Need to clear the old preview entirely and re-render to fix indices
             frames.splice(indexToRemove, 1);
             renderFrames();
         }
 
         function renderFrames() {
             framesContainer.innerHTML = '';
+            // Recreate the preview elements using the frame's canvas data URL
             frames.forEach((frame, index) => {
-                createThumbnailElement(frame.url, index);
+                const dataUrl = frame.canvas.toDataURL('image/png');
+                createThumbnailElement(dataUrl, index);
             });
             updateUI();
         }
@@ -257,33 +192,49 @@
                 const img = new Image();
                 img.onload = () => {
                     
-                    // --- SUCCESSFUL LOAD AND DRAWING ---
+                    // --- IMAGE LOADED: CREATE CANVAS CONTEXT FOR GIF.JS ---
                     const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
+                    // Set a max dimension to prevent extremely large GIFs which can crash the browser/encoder
+                    const MAX_DIM = 600; 
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_DIM) {
+                            height *= MAX_DIM / width;
+                            width = MAX_DIM;
+                        }
+                    } else {
+                        if (height > MAX_DIM) {
+                            width *= MAX_DIM / height;
+                            height = MAX_DIM;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     
-                    // Explicitly draw the image to the canvas
-                    ctx.drawImage(img, 0, 0); 
+                    // Draw the scaled image to the canvas
+                    ctx.drawImage(img, 0, 0, width, height); 
                     
                     frames.push({
-                        url: event.target.result,
-                        context: ctx,
-                        width: img.width,
-                        height: img.height
+                        canvas: canvas,
+                        width: width,
+                        height: height
                     });
                     
                     renderFrames();
-                    statusMessage.textContent = `Image loaded: ${file.name}`;
-                    // --- END SUCCESSFUL LOAD AND DRAWING ---
+                    statusMessage.textContent = `Image loaded: ${file.name} (${width}x${height})`;
+                    // --- END SUCCESSFUL LOAD ---
 
                 };
                 img.onerror = (e) => {
-                    // This logs error details if the Image object failed to render (even from local files)
                     console.error(`Image failed to load in <Image> element: ${file.name}`, e);
-                    statusMessage.textContent = `Error loading image: ${file.name}. See console for details.`;
+                    statusMessage.textContent = `Error loading image: ${file.name}. Check console for CORS or file issues.`;
                 };
                 
+                // Set crossOrigin to anonymous to potentially allow external images to be drawn on canvas
                 img.crossOrigin = "anonymous"; 
                 img.src = event.target.result;
             };
@@ -293,7 +244,6 @@
                 statusMessage.textContent = `Error reading file: ${file.name}.`;
             };
 
-            // Use readAsDataURL for image files
             reader.readAsDataURL(file);
         }
 
@@ -314,12 +264,8 @@
             e.preventDefault();
             dropZone.classList.remove('dragover');
             
-            // --- DEBUG LOGS ADDED HERE ---
-            console.log("DROP EVENT TRIGGERED. Data Types:", e.dataTransfer.types); 
-            
             // 1. Handle dropped files from local machine
             if (e.dataTransfer.files.length > 0) {
-                console.log("Local files detected:", e.dataTransfer.files.length); 
                 Array.from(e.dataTransfer.files)
                     .filter(file => file.type.startsWith('image/'))
                     .forEach(addImageToFrames);
@@ -330,19 +276,19 @@
                 const url = e.dataTransfer.getData('text/plain');
                 if (url.startsWith('http')) {
                     statusMessage.textContent = `Attempting to load image from URL...`;
+                    // Fetch the image to bypass basic CORS restrictions for image drawing
                     fetch(url)
                         .then(response => response.blob())
                         .then(blob => {
                             if (blob.type.startsWith('image/')) {
-                                // Create a mock file object from the fetched blob
                                 addImageToFrames(new File([blob], 'remote-image.png', { type: blob.type }));
                             } else {
                                 statusMessage.textContent = 'Dropped URL is not an image file type.';
                             }
                         })
                         .catch(err => {
-                            console.error("Failed to fetch image from URL (Likely CORS Blocked):", err);
-                            statusMessage.textContent = 'Error: Could not load image from that URL (Cross-Origin Blocked).';
+                            console.error("Failed to fetch image from URL:", err);
+                            statusMessage.textContent = 'Error: Could not load image from that URL (Check console for CORS error).';
                         });
                 }
             }
@@ -371,11 +317,13 @@
             }
         });
 
-        // GIF Creation
+        // GIF Creation using gif.js
         createGifButton.addEventListener('click', () => {
             if (frames.length === 0) return;
             
-            statusMessage.textContent = 'Generating GIF... please wait.';
+            downloadArea.classList.add('hidden');
+            progressArea.classList.remove('hidden');
+            statusMessage.textContent = 'Starting GIF encoding...';
             createGifButton.disabled = true;
 
             // Use the dimensions of the first frame for the entire GIF
@@ -383,28 +331,49 @@
             const delay = parseInt(durationInput.value, 10) || 200; 
             
             try {
-                // IMPORTANT: The GIFEncoder implemented here is a structural placeholder.
-                // In a true implementation, this step would require complex LZW compression.
-                const encoder = new GIFEncoder(width, height, delay);
-                encoder.start();
-
-                frames.forEach(frame => {
-                    encoder.addFrame(frame.context);
+                // Initialize gif.js encoder
+                const gif = new GIF({
+                    workers: 2, // Use 2 Web Workers for background processing
+                    quality: 10, // Quality (1 is best, 20 is worst)
+                    width: width,
+                    height: height,
+                    delay: delay, // Default frame delay in milliseconds
+                    workerScript: 'https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js' // Path to worker script
                 });
 
-                const gifData = encoder.finish();
-                const blob = new Blob([gifData], { type: 'image/gif' });
-                const url = URL.createObjectURL(blob);
+                // Add all frames (canvases) to the encoder
+                frames.forEach(frame => {
+                    // gif.js requires the canvas object itself
+                    gif.addFrame(frame.canvas, { delay: delay });
+                });
+                
+                // Event listener to update progress
+                gif.on('progress', (p) => {
+                    const percent = Math.round(p * 100);
+                    statusMessage.textContent = `Encoding: ${percent}% complete...`;
+                    progressFill.style.width = `${percent}%`;
+                });
 
-                downloadLink.href = url;
-                gifPreview.src = url;
-                downloadArea.classList.remove('hidden');
-                statusMessage.textContent = 'GIF generated successfully! (Note: The final GIF size/quality will be poor due to LZW compression placeholder.)';
+                // Event listener for completion
+                gif.on('finished', (blob) => {
+                    const url = URL.createObjectURL(blob);
+                    
+                    downloadLink.href = url;
+                    gifPreview.src = url;
+                    
+                    progressArea.classList.add('hidden');
+                    downloadArea.classList.remove('hidden');
+                    statusMessage.textContent = `GIF generated successfully!`;
+                    createGifButton.disabled = false;
+                });
+
+                // Start encoding
+                gif.render();
 
             } catch (error) {
                 console.error("GIF Encoding Failed:", error);
-                statusMessage.textContent = 'Error during GIF generation. See console for details.';
-            } finally {
+                progressArea.classList.add('hidden');
+                statusMessage.textContent = 'Error during GIF generation. Check console for details.';
                 createGifButton.disabled = false;
             }
         });
@@ -414,6 +383,7 @@
             frames = [];
             renderFrames();
             downloadArea.classList.add('hidden');
+            progressArea.classList.add('hidden');
             statusMessage.textContent = 'Frames cleared.';
         });
 
@@ -422,6 +392,7 @@
     </script>
 </body>
 </html>
+
 
 
 
