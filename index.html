@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GOATED GIF CREATOR</title>
-  <!-- Your CSS -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOATED GIF MAKER</title>
+   <!-- Your CSS -->
   <link rel="stylesheet" href="style.css" />
 
   <!-- Favicon neon generation -->
@@ -35,13 +35,11 @@
     document.head.appendChild(link);
   </script>
 </head>
-  <link rel="stylesheet" href="style.css" />
-</head>
 <body>
   <h1>Browser-Based GIF Creator</h1>
   <p>Drag, drop, or paste images to create a .GIF file</p>
 
-  <!-- Animated circles container -->
+  <!-- Animated circles -->
   <div class="container">
     <div class="circle" style="--i:0;"></div>
     <div class="circle" style="--i:1;"></div>
@@ -72,15 +70,22 @@
     <input type="file" id="file-input" multiple />
   </div>
 
-  <!-- Neon button -->
+  <!-- Neon create button -->
   <button class="neon-button" id="create-btn">Create GIF</button>
 
-  <!-- Preview -->
+  <!-- Neon red progress bar -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <!-- Image previews -->
   <div id="preview"></div>
 
-  <!-- gif-wasm library -->
+  <!-- gifski-wasm -->
   <script src="https://cdn.jsdelivr.net/npm/gifski-wasm@2.2.0/dist/gifski.min.js"></script>
   <script src="script.js"></script>
 </body>
+</html>
+
 </html>
 
