@@ -1,99 +1,82 @@
-/* Reset default styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+const dropBox = document.getElementById("drop-box");
+const fileInput = document.getElementById("file-input");
+
+// Make sure storedFiles is declared once at the top
+let storedFiles = []; 
+
+// Click to open file dialog
+dropBox.addEventListener("click", () => fileInput.click());
+
+// Handle files selected via input
+fileInput.addEventListener("change", (e) => {
+  handleFiles(e.target.files);
+});
+
+// Handle drag & drop
+dropBox.addEventListener("dragover", (e) => e.preventDefault());
+dropBox.addEventListener("drop", (e) => {
+  e.preventDefault();
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+  console.log("Files dropped:", files);
+  // You can process images here to create GIFs
 }
 
-body {
-  font-family: Arial, sans-serif;
-  background-color: #000;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding-top: 50px;
-  text-align: center;
-  height: 100vh;
-  overflow: hidden;
-  position: relative; /* needed for absolute children */
+function handleFiles(files) {
+  const fileArray = Array.from(files);
+  storedFiles.push(...fileArray);
+  fileArray.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      img.style.width = "100px";
+      img.style.margin = "5px";
+      dropBox.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-h1 {
-  margin-bottom: 1rem;
-  font-size: 2rem;
-}
-
-p {
-  font-size: 1.2rem;
-  margin-bottom: 30px;
-}
-
-/* Animated circles (behind box) */
-.container {
-  position: absolute;
-  top: 150px; /* under the heading & paragraph */
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  perspective: 1000px;
-  flex-wrap: wrap;
-  gap: 20px;
-  z-index: 0; /* behind the box */
-  pointer-events: none; /* allows clicks to pass through */
-  opacity: 0.3; /* subtle effect behind the box */
-}
-
-.circle {
-  position: relative;
-  background: transparent;
-  width: calc(var(--i) * 2.5vmin);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 3px solid rgb(0, 255, 13);
-  transform-style: preserve-3d;
-  transform: rotateX(70deg) translateZ(50px);
-  animation: animate 3s ease-in-out calc(var(--i) * 0.08s) infinite;
-  box-shadow: 0 0 15px rgb(124, 124, 124),
-              inset 0 0 15px rgb(124, 124, 124);
-}
-
-@keyframes animate {
-  0%, 100% {
-    transform: rotateX(70deg) translateZ(50px) translateY(0);
-    filter: hue-rotate(0deg);
+async function createGIF() {
+  if (storedFiles.length === 0) {
+    alert("No images to create GIF!");
+    return;
   }
-  50% {
-    transform: rotateX(70deg) translateZ(50px) translateY(-50px);
-    filter: hue-rotate(360deg);
+
+  const gif = new Gifski({
+    width: 320,
+    height: 240,
+    quality: 80,
+    speed: 10,
+  });
+
+  for (const file of storedFiles) {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target.result;
+      img.onload = () => {
+        gif.addFrame(img);
+        if (gif.frames.length === storedFiles.length) {
+          const blob = gif.compile();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "animated.gif";
+          a.click();
+        }
+      };
+    };
+    reader.readAsDataURL(file);
   }
 }
 
-/* Drag and drop box */
-.drop-box {
-  position: relative;
-  z-index: 1; /* above the circles */
-  width: 80%;
-  max-width: 500px;
-  min-height: 150px;
-  border: 2px dashed #0f0;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.7); /* slightly transparent */
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.drop-box:hover {
-  background-color: rgba(0, 255, 0, 0.1);
-  border-color: #0f0;
-}
-
-.drop-box input {
-  display: none; /* hide file input */
-}
+// Add a button to trigger GIF creation
+const createButton = document.createElement("button");
+createButton.textContent = "Create GIF";
+createButton.style.marginTop = "20px";
+createButton.onclick = createGIF;
+document.body.appendChild(createButton);
