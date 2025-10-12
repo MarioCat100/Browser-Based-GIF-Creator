@@ -2,10 +2,11 @@ const dropBox = document.getElementById("drop-box");
 const fileInput = document.getElementById("file-input");
 const preview = document.getElementById("preview");
 const createBtn = document.getElementById("create-btn");
+const progressBar = document.getElementById("progress-bar");
 
 let storedFiles = [];
 
-// Drag & drop + click file select
+// Drag & drop / click
 dropBox.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", e => handleFiles(e.target.files));
 dropBox.addEventListener("dragover", e => e.preventDefault());
@@ -29,33 +30,49 @@ function handleFiles(files) {
   });
 }
 
-// GIF creation using gif-wasm
+// Create GIF using gifski-wasm
 createBtn.addEventListener("click", async () => {
   if (storedFiles.length === 0) {
-    alert("No images to create GIF!");
+    alert("No images selected!");
     return;
   }
 
-  const gifski = new Gifski({ width: 320, height: 240, quality: 80, speed: 10 });
+  // Initialize gifski
+  const gifski = new Gifski({
+    width: 320,
+    height: 240,
+    quality: 80,
+    speed: 10,
+    progress: (p) => {
+      progressBar.style.width = Math.floor(p*100)+"%";
+    }
+  });
 
+  // Add frames asynchronously
   for (const file of storedFiles) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => gifski.addFrame(img);
-    };
-    reader.readAsDataURL(file);
+    await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          gifski.addFrame(img);
+          resolve();
+        };
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
-  // Give frames a short moment to load
-  setTimeout(async () => {
-    const blob = await gifski.compile();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "animated.gif";
-    a.click();
-  }, 500);
+  // Compile GIF
+  const blob = await gifski.compile();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "animated.gif";
+  a.click();
+
+  progressBar.style.width = "100%";
+  setTimeout(()=>progressBar.style.width="0%", 500);
 });
 
