@@ -338,7 +338,10 @@
                     width: width,
                     height: height,
                     delay: delay, // Default frame delay in milliseconds
-                    workerScript: 'https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js' // Path to worker script
+                    // ----------------------------------------------------------------------------------
+                    // FIX: Using a stable, raw GitHub link for the worker script
+                    // ----------------------------------------------------------------------------------
+                    workerScript: 'https://raw.githubusercontent.com/jnordberg/gif.js/master/dist/gif.worker.js' 
                 });
 
                 // Add all frames (canvases) to the encoder
@@ -392,7 +395,6 @@
     </script>
 </body>
 </html>
-
 
 
 
