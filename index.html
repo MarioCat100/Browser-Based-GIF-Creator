@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Browser-Based GIF Creator</title>
+  <title>Fast GIF Creator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -37,12 +37,19 @@
 
   <!-- Drag-and-drop box -->
   <div class="drop-box" id="drop-box">
-    <p> Drag & Drop Or Paste Images Here </p>
+    <p>Drag & Drop Images Here</p>
     <input type="file" id="file-input" multiple />
   </div>
 
+  <!-- Neon button -->
+  <button class="neon-button" id="create-btn">Create GIF</button>
+
+  <!-- Preview -->
+  <div id="preview"></div>
+
+  <!-- gif-wasm library -->
+  <script src="https://cdn.jsdelivr.net/npm/gifski-wasm@2.2.0/dist/gifski.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
-
 
