@@ -7,60 +7,137 @@
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- gif.js library for high-quality, client-side GIF encoding -->
+    
+    <!-- GIF.js from CDN (Required for the GIF class definition) -->
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
     
     <style>
+        /* Your Custom Animation CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
+            /* Keep existing dark background */
             font-family: 'Inter', sans-serif;
-            background-color: #0d1117; /* Dark background */
+            background-color: #0d1117; 
+            /* Added for animation centering */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden; 
         }
-        .container {
+
+        /* GIF Creator main content container */
+        .app-content {
+             /* Position content over the animation */
+            position: relative;
+            z-index: 10;
+            /* Ensure content scrolls if needed */
+            overflow-y: auto; 
             min-height: 100vh;
+            padding: 24px;
         }
+
+        /* Animation Container */
+        .container-animation {
+            position: absolute;
+            top: 20%;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Added to prevent it from overlapping UI controls */
+            z-index: 1; 
+        }
+
+        .circle {
+            position: absolute;
+            background: transparent;
+            width: calc(var(--i) * 2.5vmin);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 3px solid rgb(0, 255, 13);
+            transform-style: preserve-3d;
+            transform: rotateX(70deg) translateZ(50px);
+            animation: animate 3s ease-in-out calc(var(--i) * 0.08s) infinite;
+            box-shadow: 0 0 15px rgb(124, 124, 124),
+                        inset 0 0 15px rgb(124, 124, 124);
+        }
+
+        @keyframes animate {
+            0%, 100% {
+                transform: rotateX(70deg) translateZ(50px) translateY(0);
+                filter: hue-rotate(0);
+            }
+
+            50% {
+                transform: rotateX(70deg) translateZ(50px) translateY(-50vmin);
+                filter: hue-rotate(360deg);
+            }
+        }
+        /* End Custom Animation CSS */
+        
+        /* Existing GIF Creator Styles */
         .drop-zone {
             border: 4px dashed #30363d;
             background-color: #161b22;
             transition: background-color 0.2s;
         }
-        .drop-zone.dragover {
-            background-color: #1f2733;
-            border-color: #58a6ff;
-        }
+        .drop-zone.dragover { background-color: #1f2733; border-color: #58a6ff; }
         .preview-thumbnail {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            border-radius: 8px;
-            background-color: #21262d;
-            border: 2px solid #30363d;
+            width: 80px; height: 80px; object-fit: contain;
+            border-radius: 8px; background-color: #21262d; border: 2px solid #30363d;
         }
-        /* Custom progress bar style */
-        .progress-bar {
-            height: 8px;
-            background-color: #30363d;
-            border-radius: 4px;
-            overflow: hidden;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        .progress-fill {
-            height: 100%;
-            background-color: #58a6ff;
-            transition: width 0.1s;
-        }
+        .progress-bar { height: 8px; background-color: #30363d; border-radius: 4px; overflow: hidden; width: 0%; transition: width 0.3s; }
+        .progress-fill { height: 100%; background-color: #58a6ff; transition: width 0.1s; }
     </style>
 </head>
 <body>
+    
+    <!-- 1. AMBIENT ANIMATION BACKGROUND (Your code) -->
+    <div class="container-animation">
+        <div class="circle" style="--i:0;"></div>
+        <div class="circle" style="--i:1;"></div>
+        <div class="circle" style="--i:2;"></div>
+        <div class="circle" style="--i:3;"></div>
+        <div class="circle" style="--i:4;"></div>
+        <div class="circle" style="--i:5;"></div>
+        <div class="circle" style="--i:6;"></div>
+        <div class="circle" style="--i:7;"></div>
+        <div class="circle" style="--i:8;"></div>
+        <div class="circle" style="--i:9;"></div>
+        <div class="circle" style="--i:10;"></div>
+        <div class="circle" style="--i:11;"></div>
+        <div class="circle" style="--i:12;"></div>
+        <div class="circle" style="--i:13;"></div>
+        <div class="circle" style="--i:14;"></div>
+        <div class="circle" style="--i:15;"></div>
+        <div class="circle" style="--i:16;"></div>
+        <div class="circle" style="--i:17;"></div>
+        <div class="circle" style="--i:18;"></div>
+        <div class="circle" style="--i:19;"></div>
+        <div class="circle" style="--i:20;"></div>
+    </div>
+    <!-- END AMBIENT ANIMATION -->
 
-    <div class="container flex flex-col items-center p-6 text-gray-200">
+
+    <!-- 2. GIF CREATOR APPLICATION CONTENT -->
+    <div class="app-content flex flex-col items-center p-6 text-gray-200">
         <h1 class="text-4xl font-bold mb-2 text-white">Browser-Based GIF Creator</h1>
         <p class="mb-8 text-gray-400">Drag, drop, or paste images to create an animated GIF (Client-Side).</p>
+
+        <!-- Hidden file input for click-to-upload -->
+        <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
 
         <!-- Main Drop Zone -->
         <div id="dropZone" class="drop-zone w-full max-w-2xl p-10 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer mb-6">
             <svg class="w-10 h-10 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-2-2h2m-7-5v5m-1-1h2m-7 5h7m-5-5h5"></path></svg>
-            <p class="text-lg font-semibold text-white">Drag & Drop Images Here</p>
+            <p class="text-lg font-semibold text-white">Click Here or Drag & Drop Images Anywhere</p>
             <p class="text-sm text-gray-500">or press <kbd class="bg-gray-700 px-1 rounded">Ctrl+V</kbd> to paste a screenshot.</p>
         </div>
 
@@ -83,8 +160,7 @@
             <button id="clearFramesButton"
                 class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled>
-                Clear All
-            </button>
+                Clear All</button>
         </div>
 
         <!-- Progress Bar and Status Area -->
@@ -111,8 +187,8 @@
             <p class="text-sm mt-2 text-gray-400">Right-click the image preview below to save or share directly.</p>
             <img id="gifPreview" src="#" alt="Generated GIF Preview" class="mt-4 max-w-full h-auto rounded-lg border border-gray-700 shadow-xl">
         </div>
-
     </div>
+    <!-- END GIF CREATOR APPLICATION CONTENT -->
 
     <script>
         // --- CORE APPLICATION STATE & ELEMENTS ---
@@ -129,6 +205,7 @@
         const gifPreview = document.getElementById('gifPreview');
         const progressArea = document.getElementById('progressArea');
         const progressFill = document.getElementById('progressFill');
+        const fileInput = document.getElementById('fileInput'); // New file input element
 
         let frames = []; // Stores canvas contexts for GIF generation
 
@@ -249,21 +326,42 @@
 
         // --- EVENT HANDLERS ---
 
-        // Drag and Drop Logic
-        dropZone.addEventListener('dragover', (e) => {
+        // NEW: Handles files selected via the hidden file input
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                Array.from(e.target.files)
+                    .filter(file => file.type.startsWith('image/'))
+                    .forEach(addImageToFrames);
+            }
+        });
+
+        // NEW: Click the drop zone to open the file dialog
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+
+        // Global Drag and Drop Logic (applied to the whole document)
+        document.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.classList.add('dragover');
+            // Only show dragover visual effect if dragging over the drop zone itself
+            if (e.target === dropZone) {
+                dropZone.classList.add('dragover');
+            }
             e.dataTransfer.dropEffect = 'copy';
         });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
+        document.addEventListener('dragleave', (e) => {
+            // Remove the visual effect when leaving the drop zone area
+            if (e.target === dropZone) {
+                dropZone.classList.remove('dragover');
+            }
         });
 
-        dropZone.addEventListener('drop', (e) => {
+        document.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('dragover');
-            
+            dropZone.classList.remove('dragover'); // Remove regardless of where it dropped
+
             // 1. Handle dropped files from local machine
             if (e.dataTransfer.files.length > 0) {
                 Array.from(e.dataTransfer.files)
@@ -331,17 +429,38 @@
             const delay = parseInt(durationInput.value, 10) || 200; 
             
             try {
+                // Ensure the GIF class is defined (it should be since gif.js is loaded from CDN)
+                if (typeof window.GIF === 'undefined') {
+                    throw new Error("GIF library not loaded. Check browser console for gif.js loading errors.");
+                }
+
+                // --- FIX FOR 'Failed to construct Worker': Manual Root-Relative Path Construction ---
+                // The most robust method for GitHub Pages: construct path relative to the repository root.
+                
+                // Get the base path (e.g., /Browser-Based-GIF-Creator/)
+                let basePath = window.location.pathname;
+                if (basePath.endsWith('index.html')) {
+                    // Remove the file name if it's explicitly in the URL
+                    basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1); 
+                } else if (!basePath.endsWith('/')) {
+                    // Ensure a trailing slash if the URL ends on the repo name
+                    basePath = basePath + '/';
+                }
+
+                // Path is constructed by ORIGIN + PATH + FILENAME
+                const absoluteWorkerUrl = window.location.origin + basePath + 'gif.worker.js';
+                
                 // Initialize gif.js encoder
-                const gif = new GIF({
+                const GIFConstructor = window.GIF;
+
+                const gif = new GIFConstructor({
                     workers: 2, // Use 2 Web Workers for background processing
                     quality: 10, // Quality (1 is best, 20 is worst)
                     width: width,
                     height: height,
                     delay: delay, // Default frame delay in milliseconds
-                    // ----------------------------------------------------------------------------------
-                    // FIX: Using a stable, raw GitHub link for the worker script
-                    // ----------------------------------------------------------------------------------
-                    workerScript: 'https://raw.githubusercontent.com/jnordberg/gif.js/master/dist/gif.worker.js' 
+                    // CRUCIAL FIX: Use the calculated absolute path for the worker script
+                    workerScript: absoluteWorkerUrl 
                 });
 
                 // Add all frames (canvases) to the encoder
@@ -376,7 +495,7 @@
             } catch (error) {
                 console.error("GIF Encoding Failed:", error);
                 progressArea.classList.add('hidden');
-                statusMessage.textContent = 'Error during GIF generation. Check console for details.';
+                statusMessage.textContent = 'Error during GIF generation. Check console for details. (Likely a file path issue for gif.worker.js)';
                 createGifButton.disabled = false;
             }
         });
