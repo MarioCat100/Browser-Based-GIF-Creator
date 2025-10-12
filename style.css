@@ -1,9 +1,5 @@
 /* Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin:0; padding:0; box-sizing:border-box; }
 
 body {
   font-family: Arial, sans-serif;
@@ -15,12 +11,8 @@ body {
   padding-top: 50px;
   min-height: 100vh;
   overflow: hidden;
-  position: relative;
   text-align: center;
 }
-
-h1 { margin-bottom: 10px; }
-p { margin-bottom: 30px; font-size: 1.2rem; }
 
 /* Animated circles */
 .container {
@@ -29,8 +21,8 @@ p { margin-bottom: 30px; font-size: 1.2rem; }
   left: 0;
   width: 100%;
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
   perspective: 1000px;
   z-index: 0;
@@ -44,7 +36,7 @@ p { margin-bottom: 30px; font-size: 1.2rem; }
   width: calc(var(--i) * 2.5vmin);
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 3px solid rgb(0, 255, 13);
+  border: 3px solid rgb(0,255,13);
   transform-style: preserve-3d;
   transform: rotateX(70deg) translateZ(50px);
   animation: animate 3s ease-in-out calc(var(--i) * 0.08s) infinite;
@@ -52,11 +44,11 @@ p { margin-bottom: 30px; font-size: 1.2rem; }
 }
 
 @keyframes animate {
-  0%, 100% { transform: rotateX(70deg) translateZ(50px) translateY(0); filter: hue-rotate(0deg);}
+  0%,100% { transform: rotateX(70deg) translateZ(50px) translateY(0); filter: hue-rotate(0deg);}
   50% { transform: rotateX(70deg) translateZ(50px) translateY(-50px); filter: hue-rotate(360deg);}
 }
 
-/* Drop box */
+/* Drag box */
 .drop-box {
   position: relative;
   z-index: 1;
@@ -70,20 +62,14 @@ p { margin-bottom: 30px; font-size: 1.2rem; }
   justify-content: center;
   align-items: center;
   background-color: rgba(0,0,0,0.7);
-  color: #fff;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: all 0.2s;
   margin-bottom: 20px;
 }
 
-.drop-box:hover {
-  background-color: rgba(0,255,0,0.1);
-  border-color: #0f0;
-}
+.drop-box:hover { background-color: rgba(0,255,0,0.1); }
 
-.drop-box input { display: none; }
-
-/* Neon blue button */
+/* Neon button */
 .neon-button {
   position: relative;
   z-index: 1;
@@ -95,19 +81,39 @@ p { margin-bottom: 30px; font-size: 1.2rem; }
   font-weight: bold;
   border-radius: 10px;
   cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 0 5px #00f, 0 0 10px #00f, 0 0 20px #00f;
+  box-shadow: 0 0 5px #00f,0 0 10px #00f,0 0 20px #00f;
   margin-bottom: 20px;
+  transition: all 0.2s;
 }
 
 .neon-button:hover {
   color: #0ff;
   border-color: #0ff;
-  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #0ff, 0 0 80px #0ff;
+  box-shadow: 0 0 10px #0ff,0 0 20px #0ff,0 0 40px #0ff;
   transform: scale(1.05);
 }
 
-/* Preview images */
+/* Neon red progress bar */
+.progress-container {
+  width: 80%;
+  max-width: 500px;
+  height: 20px;
+  background-color: rgba(255,0,0,0.1);
+  border: 2px solid #f00;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background-color: #f00;
+  box-shadow: 0 0 5px #f00,0 0 10px #f00,0 0 20px #f00;
+  transition: width 0.2s ease;
+}
+
+/* Image previews */
 #preview img { width: 80px; margin: 5px; }
