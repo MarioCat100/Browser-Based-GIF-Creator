@@ -1,82 +1,61 @@
 const dropBox = document.getElementById("drop-box");
 const fileInput = document.getElementById("file-input");
+const preview = document.getElementById("preview");
+const createBtn = document.getElementById("create-btn");
 
-// Make sure storedFiles is declared once at the top
-let storedFiles = []; 
+let storedFiles = [];
 
-// Click to open file dialog
+// Drag & drop + click file select
 dropBox.addEventListener("click", () => fileInput.click());
-
-// Handle files selected via input
-fileInput.addEventListener("change", (e) => {
-  handleFiles(e.target.files);
-});
-
-// Handle drag & drop
-dropBox.addEventListener("dragover", (e) => e.preventDefault());
-dropBox.addEventListener("drop", (e) => {
+fileInput.addEventListener("change", e => handleFiles(e.target.files));
+dropBox.addEventListener("dragover", e => e.preventDefault());
+dropBox.addEventListener("drop", e => {
   e.preventDefault();
   handleFiles(e.dataTransfer.files);
 });
 
 function handleFiles(files) {
-  console.log("Files dropped:", files);
-  // You can process images here to create GIFs
-}
-
-function handleFiles(files) {
   const fileArray = Array.from(files);
   storedFiles.push(...fileArray);
+
   fileArray.forEach(file => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const img = document.createElement("img");
       img.src = e.target.result;
-      img.style.width = "100px";
-      img.style.margin = "5px";
-      dropBox.appendChild(img);
+      preview.appendChild(img);
     };
     reader.readAsDataURL(file);
   });
 }
 
-async function createGIF() {
+// GIF creation using gif-wasm
+createBtn.addEventListener("click", async () => {
   if (storedFiles.length === 0) {
     alert("No images to create GIF!");
     return;
   }
 
-  const gif = new Gifski({
-    width: 320,
-    height: 240,
-    quality: 80,
-    speed: 10,
-  });
+  const gifski = new Gifski({ width: 320, height: 240, quality: 80, speed: 10 });
 
   for (const file of storedFiles) {
-    const img = new Image();
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
+      const img = new Image();
       img.src = e.target.result;
-      img.onload = () => {
-        gif.addFrame(img);
-        if (gif.frames.length === storedFiles.length) {
-          const blob = gif.compile();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "animated.gif";
-          a.click();
-        }
-      };
+      img.onload = () => gifski.addFrame(img);
     };
     reader.readAsDataURL(file);
   }
-}
 
-// Add aa button to trigger GIF creation
-const createButton = document.createElement("button");
-createButton.textContent = "Create GIF";
-createButton.style.marginTop = "20px";
-createButton.onclick = createGIF;
-document.body.appendChild(createButton);
+  // Give frames a short moment to load
+  setTimeout(async () => {
+    const blob = await gifski.compile();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "animated.gif";
+    a.click();
+  }, 500);
+});
+
