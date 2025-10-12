@@ -50,14 +50,12 @@
         <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full max-w-2xl mb-6">
             <div class="flex items-center space-x-2 bg-gray-700 p-3 rounded-xl flex-grow">
                 <label for="duration" class="text-sm font-medium whitespace-nowrap">Animation Speed:</label>
-                <!-- REPLACED INPUT WITH SELECT DROPDOWN -->
                 <select id="duration" class="w-full bg-gray-800 text-white rounded-md p-2 border border-gray-600 focus:ring-blue-500 focus:border-blue-500">
                     <option value="100">Fast (10 FPS)</option>
                     <option value="200" selected>Standard (5 FPS)</option>
                     <option value="500">Slow (2 FPS)</option>
                     <option value="1000">Very Slow (1 FPS)</option>
                 </select>
-                <!-- END REPLACEMENT -->
             </div>
             <button id="createGifButton"
                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -101,7 +99,6 @@
         const emptyMessage = document.getElementById('emptyMessage');
         const createGifButton = document.getElementById('createGifButton');
         const clearFramesButton = document.getElementById('clearFramesButton');
-        // Now references the select element
         const durationInput = document.getElementById('duration'); 
         const statusMessage = document.getElementById('statusMessage');
         const downloadArea = document.getElementById('downloadArea');
@@ -111,14 +108,6 @@
         let frames = []; // Stores image data for GIF generation
 
         // --- GIF ENCODER IMPLEMENTATION (Simplified for client-side functionality) ---
-        // This relies on the open-source gif.js library principles but is implemented here
-        // to be self-contained within one HTML file.
-        
-        /**
-         * A lightweight, self-contained GIF encoder implementation.
-         * Note: For production use, a full library like omggif or gif.js is recommended.
-         * This version provides basic functionality required by the application flow.
-         */
         class GIFEncoder {
             constructor(width, height, delay) {
                 this.width = width;
@@ -219,7 +208,6 @@
             frameCounter.textContent = frames.length;
             emptyMessage.style.display = hasFrames ? 'none' : 'block';
             
-            // Enable/disable buttons based on frame count (can now be 1 or more)
             createGifButton.disabled = !hasFrames;
             clearFramesButton.disabled = !hasFrames;
         }
@@ -231,7 +219,7 @@
             const img = document.createElement('img');
             img.src = src;
             img.className = 'preview-thumbnail transition-opacity';
-            img.draggable = false; // Prevent dragging of the thumbnail itself
+            img.draggable = false; 
 
             const removeBtn = document.createElement('button');
             removeBtn.className = 'absolute top-0 right-0 p-1 text-xs font-bold text-white bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition duration-150';
@@ -268,14 +256,16 @@
             reader.onload = async (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    // Create a canvas context to hold the image data (essential for GIF encoder)
+                    
+                    // --- SUCCESSFUL LOAD AND DRAWING ---
                     const canvas = document.createElement('canvas');
                     canvas.width = img.width;
                     canvas.height = img.height;
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
                     
-                    // Store the canvas context and URL for rendering/encoding
+                    // Explicitly draw the image to the canvas
+                    ctx.drawImage(img, 0, 0); 
+                    
                     frames.push({
                         url: event.target.result,
                         context: ctx,
@@ -285,17 +275,22 @@
                     
                     renderFrames();
                     statusMessage.textContent = `Image loaded: ${file.name}`;
+                    // --- END SUCCESSFUL LOAD AND DRAWING ---
+
                 };
-                img.onerror = () => {
-                    statusMessage.textContent = `Error loading image: ${file.name}`;
+                img.onerror = (e) => {
+                    // This logs error details if the Image object failed to render (even from local files)
+                    console.error(`Image failed to load in <Image> element: ${file.name}`, e);
+                    statusMessage.textContent = `Error loading image: ${file.name}. See console for details.`;
                 };
-                // Ensure crossorigin attribute is set if fetching from external sources
+                
                 img.crossOrigin = "anonymous"; 
                 img.src = event.target.result;
             };
 
             reader.onerror = () => {
-                statusMessage.textContent = `Error reading file: ${file.name}`;
+                console.error(`FileReader failed to read file: ${file.name}`);
+                statusMessage.textContent = `Error reading file: ${file.name}.`;
             };
 
             // Use readAsDataURL for image files
@@ -319,14 +314,18 @@
             e.preventDefault();
             dropZone.classList.remove('dragover');
             
-            // Handle dropped files
-            if (e.dataTransfer.files.length) {
+            // --- DEBUG LOGS ADDED HERE ---
+            console.log("DROP EVENT TRIGGERED. Data Types:", e.dataTransfer.types); 
+            
+            // 1. Handle dropped files from local machine
+            if (e.dataTransfer.files.length > 0) {
+                console.log("Local files detected:", e.dataTransfer.files.length); 
                 Array.from(e.dataTransfer.files)
                     .filter(file => file.type.startsWith('image/'))
                     .forEach(addImageToFrames);
             }
             
-            // Handle dropped URLs (like from a Google search result or Discord CDN link)
+            // 2. Handle dropped URLs (only runs if no files were detected)
             else if (e.dataTransfer.types.includes('text/plain')) {
                 const url = e.dataTransfer.getData('text/plain');
                 if (url.startsWith('http')) {
@@ -335,13 +334,14 @@
                         .then(response => response.blob())
                         .then(blob => {
                             if (blob.type.startsWith('image/')) {
+                                // Create a mock file object from the fetched blob
                                 addImageToFrames(new File([blob], 'remote-image.png', { type: blob.type }));
                             } else {
                                 statusMessage.textContent = 'Dropped URL is not an image file type.';
                             }
                         })
                         .catch(err => {
-                            console.error("Failed to fetch image from URL:", err);
+                            console.error("Failed to fetch image from URL (Likely CORS Blocked):", err);
                             statusMessage.textContent = 'Error: Could not load image from that URL (Cross-Origin Blocked).';
                         });
                 }
@@ -366,7 +366,7 @@
 
                 if (imagePasted) {
                     statusMessage.textContent = 'Image pasted from clipboard.';
-                    e.preventDefault(); // Stop default browser paste action
+                    e.preventDefault(); 
                 }
             }
         });
@@ -380,18 +380,15 @@
 
             // Use the dimensions of the first frame for the entire GIF
             const { width, height } = frames[0];
-            // Read value from the SELECT element
             const delay = parseInt(durationInput.value, 10) || 200; 
-
-            // In a real application, you would ensure all images are scaled to the same size
-            // We'll proceed with the simplest GIFEncoder implementation for this demo
             
             try {
+                // IMPORTANT: The GIFEncoder implemented here is a structural placeholder.
+                // In a true implementation, this step would require complex LZW compression.
                 const encoder = new GIFEncoder(width, height, delay);
                 encoder.start();
 
                 frames.forEach(frame => {
-                    // Pass the canvas context to the encoder
                     encoder.addFrame(frame.context);
                 });
 
@@ -402,7 +399,7 @@
                 downloadLink.href = url;
                 gifPreview.src = url;
                 downloadArea.classList.remove('hidden');
-                statusMessage.textContent = 'GIF generated successfully!';
+                statusMessage.textContent = 'GIF generated successfully! (Note: The final GIF size/quality will be poor due to LZW compression placeholder.)';
 
             } catch (error) {
                 console.error("GIF Encoding Failed:", error);
@@ -425,5 +422,6 @@
     </script>
 </body>
 </html>
+
 
 
