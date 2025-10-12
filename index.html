@@ -49,8 +49,15 @@
         <!-- Settings and Action Buttons -->
         <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full max-w-2xl mb-6">
             <div class="flex items-center space-x-2 bg-gray-700 p-3 rounded-xl flex-grow">
-                <label for="duration" class="text-sm font-medium whitespace-nowrap">Frame Duration (ms):</label>
-                <input type="number" id="duration" value="200" min="50" class="w-full bg-gray-800 text-white rounded-md p-2 border border-gray-600 focus:ring-blue-500 focus:border-blue-500" />
+                <label for="duration" class="text-sm font-medium whitespace-nowrap">Animation Speed:</label>
+                <!-- REPLACED INPUT WITH SELECT DROPDOWN -->
+                <select id="duration" class="w-full bg-gray-800 text-white rounded-md p-2 border border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="100">Fast (10 FPS)</option>
+                    <option value="200" selected>Standard (5 FPS)</option>
+                    <option value="500">Slow (2 FPS)</option>
+                    <option value="1000">Very Slow (1 FPS)</option>
+                </select>
+                <!-- END REPLACEMENT -->
             </div>
             <button id="createGifButton"
                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -94,7 +101,8 @@
         const emptyMessage = document.getElementById('emptyMessage');
         const createGifButton = document.getElementById('createGifButton');
         const clearFramesButton = document.getElementById('clearFramesButton');
-        const durationInput = document.getElementById('duration');
+        // Now references the select element
+        const durationInput = document.getElementById('duration'); 
         const statusMessage = document.getElementById('statusMessage');
         const downloadArea = document.getElementById('downloadArea');
         const downloadLink = document.getElementById('downloadLink');
@@ -281,6 +289,8 @@
                 img.onerror = () => {
                     statusMessage.textContent = `Error loading image: ${file.name}`;
                 };
+                // Ensure crossorigin attribute is set if fetching from external sources
+                img.crossOrigin = "anonymous"; 
                 img.src = event.target.result;
             };
 
@@ -370,7 +380,8 @@
 
             // Use the dimensions of the first frame for the entire GIF
             const { width, height } = frames[0];
-            const delay = parseInt(durationInput.value, 10) || 200;
+            // Read value from the SELECT element
+            const delay = parseInt(durationInput.value, 10) || 200; 
 
             // In a real application, you would ensure all images are scaled to the same size
             // We'll proceed with the simplest GIFEncoder implementation for this demo
@@ -414,4 +425,5 @@
     </script>
 </body>
 </html>
+
 
