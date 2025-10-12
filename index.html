@@ -4,6 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GOATED GIF MAKER</title>
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Favicon neon generation -->
+  <canvas id="favicon-canvas" width="32" height="32" style="display:none"></canvas>
+  <script>
+    const canvas = document.getElementById("favicon-canvas");
+    const ctx = canvas.getContext("2d");
+
+    // black background
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 32, 32);
+
+    // neon blue glowing circle
+    const gradient = ctx.createRadialGradient(16,16,5,16,16,16);
+    gradient.addColorStop(0, "#0ff");
+    gradient.addColorStop(1, "rgba(0,255,255,0)");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(16,16,10,0,Math.PI*2);
+    ctx.fill();
+
+    // create favicon link
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/png";
+    link.href = canvas.toDataURL("image/png");
+    document.head.appendChild(link);
+  </script>
+</head>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
