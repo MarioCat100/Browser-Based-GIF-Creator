@@ -35,9 +35,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 014 4v2a3 3 0 01-3 3H7z" />
                 </svg>
-                Drag & Drop or **Paste (Ctrl+V)** Images Here
+                Drag & Drop Files, URLs, or **Paste (Ctrl+V)** Images Here
             </p>
-            <p class="text-gray-500 text-sm mt-1">PNG/JPG files supported. Needs at least two frames.</p>
+            <p class="text-gray-500 text-sm mt-1">PNG/JPG files supported. At least one image required.</p>
             <input type="file" id="fileInput" multiple accept="image/png, image/jpeg" class="hidden">
         </div>
 
@@ -123,8 +123,8 @@
 
                 // Main encoding process
                 async encode() {
-                    if (this.frames.length < 2) {
-                        throw new Error("Need at least two frames to create an animated GIF.");
+                    if (this.frames.length < 1) { // Check for at least one frame now
+                        throw new Error("Need at least one frame to create an animated GIF.");
                     }
 
                     // 1. Write Header
@@ -231,11 +231,12 @@
         function updateUI() {
             const count = loadedImages.length;
             convertButton.textContent = `Create GIF (${count} Frames)`;
-            convertButton.disabled = count < 2;
+            // ENABLE button if there is 1 or more image
+            convertButton.disabled = count < 1; 
             
             let message = `${count} images loaded. Ready to convert!`;
-            if (count < 2) {
-                 message = `Load at least 2 images to create a GIF.`;
+            if (count === 0) {
+                 message = `Load at least 1 image to create a GIF.`;
             }
             statusMessage.textContent = message;
             
@@ -258,10 +259,20 @@
                 reader.readAsDataURL(file);
             });
         }
+        
+        function processImageUrl(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous'; // Crucial for cross-origin images
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Failed to load image from URL.'));
+                img.src = url;
+            });
+        }
+
 
         async function handleFiles(files) {
-            // Clear existing images only if new files are being added (not pasted)
-            // For drag-and-drop/file input, we generally want to start fresh.
+            // Clear existing images for new drag/file input
             loadedImages = [];
             
             const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
@@ -287,6 +298,32 @@
             }
         }
         
+        // --- Drag/Drop Handler for Files AND URLs ---
+        async function handleDragDrop(dataTransfer) {
+            // Check for file uploads first
+            if (dataTransfer.files.length > 0) {
+                await handleFiles(dataTransfer.files);
+                return;
+            }
+            
+            // Check for URL (text) content, which often happens when dragging from Google/Discord
+            const url = dataTransfer.getData('URL') || dataTransfer.getData('text/plain');
+            
+            if (url) {
+                // If it looks like a URL, try to load it as an image
+                statusMessage.textContent = `Loading image from URL...`;
+                try {
+                    const img = await processImageUrl(url);
+                    // Clear existing images before adding the new URL image
+                    loadedImages = [img];
+                    updateUI();
+                } catch (error) {
+                    console.error("Error loading image from URL:", error);
+                    statusMessage.textContent = `Could not load image from that URL. Try downloading and dropping the file instead.`;
+                }
+            }
+        }
+        
         // --- Clipboard Paste Handler ---
         document.addEventListener('paste', async (e) => {
             // Check for image data in the clipboard
@@ -303,12 +340,13 @@
                         try {
                             const img = await processImageFile(file);
                             loadedImages.push(img);
+                            // Sort by time of addition (most recent is last)
                             updateUI();
                         } catch (error) {
                             statusMessage.textContent = `Error loading pasted image.`;
                         }
                         foundImage = true;
-                        break; // Only process one image from clipboard for simplicity
+                        // DO NOT break here, as multiple screenshots/pasted images can be handled sequentially
                     }
                 }
             }
@@ -333,7 +371,7 @@
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
+            handleDragDrop(e.dataTransfer);
         });
 
         // Trigger file input when clicking the drop zone
@@ -348,7 +386,7 @@
         // --- Conversion Handler ---
 
         convertButton.addEventListener('click', async () => {
-            if (loadedImages.length < 2) return;
+            if (loadedImages.length < 1) return;
 
             convertButton.disabled = true;
             statusMessage.textContent = "Processing frames and encoding GIF... (This may take a moment)";
