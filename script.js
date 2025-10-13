@@ -73,9 +73,13 @@ createBtn.addEventListener("click", async () => {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
 
+    // Use first image's name + .gif
+    let originalName = storedFiles[0].name.split(".")[0];
+    const filename = originalName + ".gif";
+
     const a = document.createElement("a");
     a.href = url;
-    a.download = "animated.gif";
+    a.download = filename;
     a.click();
 
     progressBar.style.width = "100%";
