@@ -27,6 +27,17 @@ dropBox.addEventListener("drop", e => {
   handleFiles(e.dataTransfer.files);
 });
 
+// --- PASTE SUPPORT ---
+document.addEventListener("paste", e => {
+  const items = e.clipboardData.items;
+  for (let item of items) {
+    if (item.type.indexOf("image") !== -1) {
+      const file = item.getAsFile();
+      handleFiles([file]);
+    }
+  }
+});
+
 // --- Handle Selected Files ---
 function handleFiles(files) {
   const fileArray = Array.from(files);
