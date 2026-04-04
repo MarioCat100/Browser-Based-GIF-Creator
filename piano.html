@@ -156,35 +156,10 @@ class Tile {
 }
 
 function draw() {
-    // --- 1. THE START SCREEN (Where the Button lives) ---
-    if (gameState === "START") {
-        background(20); // Nice dark menu vibe
-        
-        // DRAW THE PRO TOGGLE BUTTON
-        rectMode(CENTER);
-        fill(isProMode ? "#FFD700" : "#555"); // Gold if ON, Gray if OFF
-        noStroke();
-        rect(width / 2, height / 2 + 100, 160, 50, 15); 
-        
-        // BUTTON TEXT
-        fill(isProMode ? 0 : 255); 
-        textSize(20);
-        textAlign(CENTER, CENTER);
-        text(isProMode ? "PRO MODE: ON" : "PRO MODE: OFF", width / 2, height / 2 + 100);
-        
-        // TITLE
-        fill(255);
-        textSize(45);
-        text("GOATED TILES", width / 2, height / 2 - 40);
-        textSize(14);
-        text("TAP ANYWHERE ELSE TO PLAY", width / 2, height / 2 + 10);
-        return; // STOP HERE if we aren't playing yet!
-    }
-
-    // If game state isn't playing (like Game Over), don't run the rest
+    // 1. GAME STATE CHECK
     if (gameState !== "PLAYING") return;
 
-    // --- 2. DYNAMIC BACKGROUND (Your Pulse Logic) ---
+    // 2. DYNAMIC BACKGROUND (Pulse Logic)
     if (pulseMode) {
         let vol = amp.getLevel();
         let r = currentPulseColor[0];
@@ -203,18 +178,15 @@ function draw() {
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    // --- 3. GRID ---
+    // 3. GRID
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
-    // --- 4. TILES (With Pro Speed Multiplier) ---
-    // This is the "Engine" part of Pro Mode
+    // 4. TILES (With Pro Multiplier)
     let proMultiplier = isProMode ? 1.8 : 1.0; 
 
     for (let i = tiles.length - 1; i >= 0; i--) {
         let t = tiles[i];
-        
-        // We multiply your existing varR by the proMultiplier
         t.move(varR * proMultiplier, alpha); 
         t.show();
 
@@ -226,7 +198,7 @@ function draw() {
         if (t.y > height) triggerGameOver();
     }
 
-    // --- 5. UI (Score & Feedback) ---
+    // 5. SCORE & FEEDBACK
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
@@ -235,12 +207,23 @@ function draw() {
 
     if (feedbackTimer > 0) {
         fill(feedbackColor);
-        noStroke();
         textSize(40);
-        textAlign(CENTER);
         text(feedbackText, width / 2, height / 2 + 50);
         feedbackTimer--; 
     }
+
+    // 6. THE PRO BUTTON (Persistent UI - drawn last to stay on top)
+    rectMode(CORNER); 
+    fill(isProMode ? "#FFD700" : 200); // Gold if active, Gray if inactive
+    stroke(0);
+    strokeWeight(2);
+    rect(20, 20, 80, 40, 5); // Positioned top-left
+
+    fill(0);
+    noStroke();
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text("PRO", 60, 40); // 60 is the center of the 80px wide button
 }
 // INPUT HANDLING
 function mousePressed() {
