@@ -156,39 +156,66 @@ class Tile {
 }
 
 function draw() {
+    // --- 1. THE START SCREEN (Where the Button lives) ---
+    if (gameState === "START") {
+        background(20); // Nice dark menu vibe
+        
+        // DRAW THE PRO TOGGLE BUTTON
+        rectMode(CENTER);
+        fill(isProMode ? "#FFD700" : "#555"); // Gold if ON, Gray if OFF
+        noStroke();
+        rect(width / 2, height / 2 + 100, 160, 50, 15); 
+        
+        // BUTTON TEXT
+        fill(isProMode ? 0 : 255); 
+        textSize(20);
+        textAlign(CENTER, CENTER);
+        text(isProMode ? "PRO MODE: ON" : "PRO MODE: OFF", width / 2, height / 2 + 100);
+        
+        // TITLE
+        fill(255);
+        textSize(45);
+        text("GOATED TILES", width / 2, height / 2 - 40);
+        textSize(14);
+        text("TAP ANYWHERE ELSE TO PLAY", width / 2, height / 2 + 10);
+        return; // STOP HERE if we aren't playing yet!
+    }
+
+    // If game state isn't playing (like Game Over), don't run the rest
     if (gameState !== "PLAYING") return;
 
-    // 1. DYNAMIC BACKGROUND (Now with Custom Song Colors)
+    // --- 2. DYNAMIC BACKGROUND (Your Pulse Logic) ---
     if (pulseMode) {
         let vol = amp.getLevel();
-        
-        // Pull the R, G, and B values from the array we set when the button was clicked
         let r = currentPulseColor[0];
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
-        // Map volume to fade from white (255) down to the song's specific color
         let pR = map(vol, 0, 0.3, 255, r);
         let pG = map(vol, 0, 0.3, 255, g);
         let pB = map(vol, 0, 0.3, 255, b);
-
         background(pR, pG, pB);
     } else {
-        background(255); // Classic solid white
+        background(255);
     }
     
     alpha = frameCount / 200; 
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    // 2. GRID
+    // --- 3. GRID ---
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
-    // 3. TILES
+    // --- 4. TILES (With Pro Speed Multiplier) ---
+    // This is the "Engine" part of Pro Mode
+    let proMultiplier = isProMode ? 1.8 : 1.0; 
+
     for (let i = tiles.length - 1; i >= 0; i--) {
         let t = tiles[i];
-        t.move(varR, alpha);
+        
+        // We multiply your existing varR by the proMultiplier
+        t.move(varR * proMultiplier, alpha); 
         t.show();
 
         if (t.y > -t.h + 5 && t.once) {
@@ -199,14 +226,13 @@ function draw() {
         if (t.y > height) triggerGameOver();
     }
 
-    // 4. SCORE
+    // --- 5. UI (Score & Feedback) ---
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
     textAlign(CENTER);
     text(score, width / 2, 80);
 
-    // 5. FEEDBACK POP-UP
     if (feedbackTimer > 0) {
         fill(feedbackColor);
         noStroke();
