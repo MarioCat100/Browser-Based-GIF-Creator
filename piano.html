@@ -260,12 +260,19 @@ function restartGame() {
 }
 
 function goHome() {
+    // 1. Kill the music and reset state
     if (mySound) mySound.stop();
     gameState = "MENU";
+    
+    // 2. Hide the Death Screen 
     document.getElementById('death-screen').classList.add('hidden');
+    
+    // 3. Show the Home Screen container
     const home = document.getElementById('home-screen');
     home.classList.remove('hidden');
-    home.innerHTML = `<h1 style="letter-spacing: 5px;">GOATED TILES</h1><div id="song-list"></div>`;
+    
+    // 4. Let setup() do ALL the heavy lifting
+    // It will check if pulseMode is true/false and draw the button correctly
     setup();
 }
 
