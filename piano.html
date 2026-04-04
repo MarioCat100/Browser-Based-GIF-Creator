@@ -81,19 +81,24 @@ function setup() {
     // 1. Grab the "Home Screen" overlay
     const home = document.getElementById('home-screen');
     
-    // 2. Set the Shell (Now with VFX and INPUT toggles)
+    // 2. Set the Shell (Now with VFX, PRO, and INPUT toggles)
     home.innerHTML = `
         <h1 style="letter-spacing: 5px; margin-top: 50px;">GOATED TILES</h1>
         
-        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
             <button class="btn" onclick="togglePulse()" 
-                style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 130px;">
+                style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 100px; padding: 10px; font-size: 14px;">
                 VFX: ${pulseMode ? 'ON' : 'OFF'}
+            </button>
+
+            <button class="btn" onclick="togglePro()" 
+                style="background: ${isProMode ? '#f1c40f' : '#666'}; width: 100px; padding: 10px; font-size: 14px; color: ${isProMode ? '#000' : '#fff'};">
+                PRO: ${isProMode ? 'ON' : 'OFF'}
             </button>
             
             <button class="btn" onclick="toggleControls()" 
-                style="background: #3498db; width: 130px;">
-                MODE: ${controlMode}
+                style="background: #3498db; width: 100px; padding: 10px; font-size: 14px;">
+                ${controlMode}
             </button>
         </div>
 
@@ -104,7 +109,7 @@ function setup() {
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
-    // 4. Fill the list with Kanye/K-Pop tracks
+    // 4. Fill the list with Kanye/SZA tracks and Best Scores
     mySongs.forEach(s => {
         let savedBest = localStorage.getItem("best_" + s.url) || 0;
         let btn = document.createElement('button');
@@ -122,7 +127,6 @@ function setup() {
 
     amp = new p5.Amplitude();
 }
-
 function loadAndStart() {
     if (mySound) mySound.stop();
     document.getElementById('home-screen').innerHTML = "<h1>LOADING...</h1>";
