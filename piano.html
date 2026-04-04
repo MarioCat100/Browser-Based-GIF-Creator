@@ -122,16 +122,23 @@ function mousePressed() {
     if (gameState !== "PLAYING") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
-    let hit = false;
-    // Check lowest tile
-    let t = tiles[0];
-    if (mouseX > t.x && mouseX < t.x + t.w && mouseY > t.y && mouseY < t.y + t.h + alpha) {
+    // 1. Convert mouse click to a lane (0-3)
+    let clickedLane = floor(mouseX / (width / 4));
+    
+    // 2. Send that lane to the master checker
+    checkHit(clickedLane);
+}
+
+// THE MASTER CHECKER (Add this function below mousePressed)
+function checkHit(lane) {
+    let t = tiles[0]; // Always check the lowest tile first
+    
+    if (t && !t.hit && t.lane === lane) {
         tiles.splice(0, 1);
         score++;
-        hit = true;
+    } else {
+        triggerGameOver();
     }
-
-    if (!hit) triggerGameOver();
 }
 
 function triggerGameOver() {
