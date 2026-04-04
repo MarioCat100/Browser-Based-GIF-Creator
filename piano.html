@@ -64,11 +64,17 @@ const mySongs = [
 function setup() {
     createCanvas(windowWidth, windowHeight);
     const list = document.getElementById('song-list');
-    list.innerHTML = ""; // Clear list before building
+    list.innerHTML = ""; 
+
     mySongs.forEach(s => {
+        // Look up the score for this song
+        let savedBest = localStorage.getItem("best_" + s.url) || 0;
+        
         let btn = document.createElement('button');
         btn.className = "btn";
-        btn.innerText = s.name;
+        // Show Name + High Score on the button
+        btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
+        
         btn.onclick = () => { currentSongUrl = s.url; loadAndStart(); };
         list.appendChild(btn);
     });
@@ -177,9 +183,30 @@ function checkHit(lane) {
 function triggerGameOver() {
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
-    fill(255, 0, 0); 
-    text(score, width / 2, 80); 
-    document.getElementById('final-score').innerText = "SCORE: " + score;
+    
+    // 1. Create a unique key for this specific song
+    let scoreKey = "best_" + currentSongUrl; 
+    
+    // 2. Get the old high score (default to 0 if it doesn't exist)
+    let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
+    let isNewRecord = false;
+
+    // 3. Check if we beat it
+    if (score > previousBest) {
+        localStorage.setItem(scoreKey, score);
+        isNewRecord = true;
+    }
+
+    // 4. Update the Death Screen text
+    let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
+    document.getElementById('fail-text').innerText = failText;
+    document.getElementById('fail-text').style.color = isNewRecord ? "#2ecc71" : "#e74c3c"; // Green for win, Red for fail
+    
+    document.getElementById('final-score').innerHTML = `
+        SCORE: ${score}<br>
+        <span style="font-size: 18px; color: #666;">BEST: ${isNewRecord ? score : previousBest}</span>
+    `;
+    
     document.getElementById('death-screen').classList.remove('hidden');
 }
 
