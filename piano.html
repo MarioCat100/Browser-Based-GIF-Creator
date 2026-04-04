@@ -227,8 +227,8 @@ function keyPressed() {
     if (key === 's' || key === 'S' || keyCode === DOWN_ARROW)  targetLane = 2;
     if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 3; 
 
-    // Pass 'true' so checkHit knows to skip the MouseY precision check
-    if (targetLane !== -1) checkHit(targetLane, true);
+    // We no longer need to pass 'true' here!
+    if (targetLane !== -1) checkHit(targetLane);
 }
 
 // ONE MASTER CHECKER (Final Logic: Supports CLICK and KEYBOARD modes)
