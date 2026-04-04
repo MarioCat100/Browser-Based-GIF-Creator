@@ -187,6 +187,43 @@ function restartGame() {
     // 5. Re-run setup to put the Kanye and K-Pop buttons back in the list
     setup();
 }
+    function keyPressed() {
+    if (gameState !== "PLAYING") return;
+
+    // Map WASD and Arrow Keys to Lane Numbers (0, 1, 2, 3)
+    let targetLane = -1;
+
+    if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW) targetLane = 0;
+    if (key === 's' || key === 'S' || keyCode === DOWN_ARROW) targetLane = 1;
+    if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 2;
+    if (key === 'f' || key === 'F' || keyCode === UP_ARROW) targetLane = 3; 
+    // ^ Note: I used 'F' for the 4th lane since it's more ergonomic than 'W' 
+    // but you can change 'f' to 'w' if you prefer!
+
+    if (targetLane !== -1) {
+        checkHit(targetLane);
+    }
+}
+
+// We move the "Hit Logic" to its own function so both Mouse and Keys can use it
+function checkHit(lane) {
+    let hitSomething = false;
+    
+    // Check only the lowest tile (tiles[0])
+    let t = tiles[0]; 
+    if (t && !t.hit && t.lane === lane) {
+        // Only count it if it's actually on the screen
+        if (t.y + t.h > 0) {
+            tiles.splice(0, 1);
+            score++;
+            hitSomething = true;
+        }
+    }
+
+    if (!hitSomething) {
+        triggerGameOver();
+    }
+}
 </script>
 </body>
 </html>
