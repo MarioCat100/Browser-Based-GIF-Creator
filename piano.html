@@ -378,9 +378,10 @@ function toggleControls() {
     controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK";
     setup(); // Re-render menu to update button text
 }
-    function togglePro() {
-    isProMode = !isProMode; // The "!" flips true to false and vice-versa
+   function togglePro() {
+    isProMode = !isProMode; // Flip the true/false
     console.log("Pro Mode is now: " + isProMode);
+    setup(); // <--- THIS RE-DRAWS THE MENU WITH THE NEW COLOR
 }
 </script>
 </body>
