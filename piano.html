@@ -3,182 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Goated Tiles</title>
+    <title>Goated Tiles v3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-        #menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; z-index: 10; font-family: sans-serif; }
-        .song-btn { width: 80%; padding: 15px; margin: 5px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        /* Overlays */
+        .overlay { 
+            position: absolute; inset: 0; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            background: white; z-index: 10; 
+        }
+        
+        .hidden { display: none !important; }
+
+        /* Buttons */
+        .btn { 
+            width: 80%; max-width: 300px; 
+            padding: 20px; margin: 10px; 
+            background: #000; color: #fff; 
+            border: none; border-radius: 12px; 
+            font-size: 18px; font-weight: bold; 
+        }
+        .btn-home { background: #666; }
+        
+        #song-list { width: 100%; display: flex; flex-direction: column; align-items: center; overflow-y: auto; max-height: 50vh; }
     </style>
 </head>
 <body>
 
-<div id="menu">
-    <h1 style="letter-spacing: 4px;">PIANO TILES</h1>
-    <div id="library" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        </div>
+<div id="home-screen" class="overlay">
+    <h1 style="letter-spacing: 5px;">GOATED TILES</h1>
+    <div id="song-list"></div>
+</div>
+
+<div id="death-screen" class="overlay hidden">
+    <h1 id="fail-text">FAILED</h1>
+    <h2 id="final-score">SCORE: 0</h2>
+    <button class="btn" onclick="restartGame()">RESTART</button>
+    <button class="btn btn-home" onclick="goHome()">HOME</button>
 </div>
 
 <script>
 let mySound;
-let amp;
 let tiles = [];
 let score = 0;
-let gameState = "MENU"; // MENU, PLAYING, GAMEOVER
-let currentLane = 0;
-let speed = 7;
+let gameState = "MENU";
+let speed = 8;
+let currentSongUrl = "";
 
-// --- YOUR GITHUB SONGS ---
+// --- CONFIGURATION: Match your GitHub filenames ---
 const mySongs = [
-    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3" },
-    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3" }
+    { name: "KANYE - POWER", url: "./power.mp3" },
+    { name: "UPLOADED TRACK", url: "./song2.mp3" }
 ];
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    amp = new p5.Amplitude();
-
-    // This tells the browser to treat the audio as a music stream
-p5.prototype.userStartAudio();
     
-    // Build the menu buttons
-    const lib = document.getElementById('library');
+    // Setup Library Buttons
+    const list = document.getElementById('song-list');
     mySongs.forEach(s => {
         let btn = document.createElement('button');
-        btn.className = "song-btn";
+        btn.className = "btn";
         btn.innerText = s.name;
-        btn.onclick = () => loadAndStart(s.url);
-        lib.appendChild(btn);
+        btn.onclick = () => { currentSongUrl = s.url; loadAndStart(); };
+        list.appendChild(btn);
     });
 }
 
-function loadAndStart(url) {
+function loadAndStart() {
     if (mySound) mySound.stop();
-    // Show a "Loading" state
-    document.getElementById('menu').innerHTML = "<h1>LOADING...</h1>";
+    document.getElementById('home-screen').innerHTML = "<h1>LOADING...</h1>";
     
-    mySound = loadSound(url, () => {
-        document.getElementById('menu').style.display = "none";
-        resetGame();
+    mySound = loadSound(currentSongUrl, () => {
+        document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('death-screen').classList.add('hidden');
+        startGame();
     });
 }
 
-function resetGame() {
+function startGame() {
     tiles = [];
     score = 0;
     speed = 8;
     gameState = "PLAYING";
-    currentLane = floor(random(4));
-    tiles.push(new Tile(currentLane));
+    
+    // Initial spawn
+    for (let i = 0; i < 5; i++) {
+        spawnTile(height - (i * 250) - 500);
+    }
+    
     mySound.play();
+    userStartAudio(); // Help with silent switch issues
 }
 
-class Tile {
-    constructor(lane) {
-        this.lane = lane;
-        this.w = width / 4;
-        this.h = height / 5;
-        this.x = this.lane * this.w;
-        this.y = -this.h;
-        this.hit = false;
-    }
-
-    move() {
-        this.y += speed;
-    }
-
-    show() {
-        fill(this.hit ? 200 : 0);
-        stroke(100);
-        rect(this.x, this.y, this.w, this.h);
-    }
-
-    isOffScreen() {
-        return this.y > height;
-    }
+function spawnTile(y) {
+    tiles.push({
+        x: floor(random(4)) * (width / 4),
+        y: y,
+        w: width / 4,
+        h: 250,
+        hit: false
+    });
 }
 
 function draw() {
     if (gameState !== "PLAYING") return;
     background(255);
 
-    // Draw grid lines
-    stroke(220);
-    for (let i = 1; i < 4; i++) {
-        line(i * width / 4, 0, i * width / 4, height);
-    }
+    // Draw Grid
+    stroke(230);
+    for (let i = 1; i < 4; i++) line(i * (width / 4), 0, i * (width / 4), height);
 
-    // Handle Tiles
     for (let i = tiles.length - 1; i >= 0; i--) {
         let t = tiles[i];
-        t.move();
-        t.show();
+        t.y += speed;
 
-        // Check if missed
-        if (t.isOffScreen() && !t.hit) {
-            triggerGameOver();
-        }
+        fill(t.hit ? 220 : 0);
+        stroke(100);
+        rect(t.x, t.y, t.w, t.h);
 
-        // Remove old tiles
-        if (t.isOffScreen()) {
+        // Lose if bottom tile missed
+        if (t.y > height && !t.hit) triggerGameOver();
+
+        // Recycle tiles
+        if (t.y > height) {
             tiles.splice(i, 1);
+            let highestY = min(tiles.map(tile => tile.y));
+            spawnTile(highestY - 250);
+            speed += 0.01;
         }
     }
 
-    // Spawn Logic (Fixed Spacing)
-    if (tiles.length > 0) {
-        let lastTile = tiles[tiles.length - 1];
-        if (lastTile.y > 0) {
-            currentLane = floor(random(4));
-            tiles.push(new Tile(currentLane));
-            speed += 0.01; // Scale difficulty
-        }
-    }
-
-    // UI
-    fill(0, 150);
-    noStroke();
-    textSize(50);
-    textAlign(CENTER);
-    text(score, width / 2, 80);
+    // Score Text
+    fill(0, 100); noStroke(); textSize(60); textAlign(CENTER);
+    text(score, width / 2, 100);
 }
 
 function mousePressed() {
-    function mousePressed() {
-    if (getAudioContext().state !== 'running') {
-        getAudioContext().resume();
-    }
-    // ... rest of your code
-}
     if (gameState !== "PLAYING") return;
+    if (getAudioContext().state !== 'running') getAudioContext().resume();
 
-    let hitSomething = false;
-    // Find the lowest unhit tile
+    let hit = false;
     for (let t of tiles) {
         if (!t.hit && mouseX > t.x && mouseX < t.x + t.w && mouseY > t.y && mouseY < t.y + t.h) {
             t.hit = true;
             score++;
-            hitSomething = true;
+            hit = true;
             break;
         }
     }
-
-    if (!hitSomething) {
-        triggerGameOver();
-    }
+    if (!hit) triggerGameOver();
 }
 
 function triggerGameOver() {
     gameState = "GAMEOVER";
     mySound.stop();
-    alert("FAILED! Score: " + score);
-    location.reload(); // Quickest way to go back to menu
+    document.getElementById('final-score').innerText = "SCORE: " + score;
+    document.getElementById('death-screen').classList.remove('hidden');
 }
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
+// Button Functions
+function restartGame() {
+    document.getElementById('death-screen').classList.add('hidden');
+    startGame();
 }
+
+function goHome() {
+    location.reload(); // Hard reset to go back to the library
+}
+
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 </script>
 </body>
 </html>
