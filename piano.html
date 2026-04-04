@@ -134,15 +134,27 @@ class Tile {
 
 function draw() {
     if (gameState !== "PLAYING") return;
-    background(255);
+
+    // 1. DYNAMIC BACKGROUND (Replaces background(255))
+    if (pulseMode) {
+        let vol = amp.getLevel();
+        // This maps volume to a pulsing blue/white color
+        let bgCol = map(vol, 0, 0.3, 255, 150); 
+        background(bgCol, bgCol, 255); 
+    } else {
+        background(255); // Classic solid white
+    }
     
     alpha = frameCount / 200; 
     let vol = amp.getLevel();
+    // Your existing varR logic for the tile speed bounce
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
+    // 2. GRID
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
+    // 3. TILES
     for (let i = tiles.length - 1; i >= 0; i--) {
         let t = tiles[i];
         t.move(varR, alpha);
@@ -156,22 +168,23 @@ function draw() {
         if (t.y > height) triggerGameOver();
     }
 
+    // 4. SCORE
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
     textAlign(CENTER);
     text(score, width / 2, 80);
-// DRAW THE FEEDBACK POP-UP
+
+    // 5. FEEDBACK POP-UP
     if (feedbackTimer > 0) {
         fill(feedbackColor);
         noStroke();
         textSize(40);
         textAlign(CENTER);
         text(feedbackText, width / 2, height / 2 + 50);
-        feedbackTimer--; // This makes it disappear after 25 frames
+        feedbackTimer--; 
     }
 }
-
 // INPUT HANDLING
 function mousePressed() {
     if (gameState !== "PLAYING") return;
