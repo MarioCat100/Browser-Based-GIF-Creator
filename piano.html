@@ -237,6 +237,18 @@ function keyPressed() {
     // We no longer need to pass 'true' here!
     if (targetLane !== -1) checkHit(targetLane);
 }
+    function touchStarted() {
+    if (gameState !== "PLAYING") return;
+    if (getAudioContext().state !== 'running') getAudioContext().resume();
+
+    // Map the horizontal touch position to one of the 4 lanes
+    let targetLane = floor(map(mouseX, 0, width, 0, 4));
+    
+    if (targetLane >= 0 && targetLane <= 3) {
+        checkHit(targetLane);
+    }
+    return false; // This prevents the screen from scrolling while you play
+}
 
 // ONE MASTER CHECKER (Final Logic: Supports CLICK and KEYBOARD modes)
 function checkHit(lane) {
