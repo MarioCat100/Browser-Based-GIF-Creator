@@ -208,33 +208,22 @@
 }
 
     function gameLoop() {
-        if (!gameRunning) return;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+       // Inside the for-loop in gameLoop()
+if (t.y > canvas.height) {
+    tiles.splice(i, 1);
+    
+    // Find the current highest tile (the one with the smallest Y value)
+    let highestY = 0;
+    tiles.forEach(tile => {
+        if (tile.y < highestY) highestY = tile.y;
+    });
 
-        // Vertical Grid
-        ctx.strokeStyle = '#eee';
-        for (let i = 1; i < 4; i++) {
-            ctx.beginPath(); ctx.moveTo(i * laneWidth, 0); ctx.lineTo(i * laneWidth, canvas.height); ctx.stroke();
-        }
-
-        for (let i = tiles.length - 1; i >= 0; i--) {
-            let t = tiles[i];
-            t.y += speed;
-
-            ctx.fillStyle = t.hit ? '#ccc' : '#000';
-            ctx.fillRect(t.x, t.y, t.w, t.h);
-
-            if (t.y > canvas.height && !t.hit) gameOver();
-
-            if (t.y > canvas.height) {
-                tiles.splice(i, 1);
-                spawnTile(tiles[0].y - 250);
-                speed += 0.02;
-            }
-        }
-        requestAnimationFrame(gameLoop);
-    }
+    // Spawn the new tile exactly one height above the highest one
+    spawnTile(highestY - 250);
+    
+    // Gradual speed increase
+    speed += 0.02;
+}
 
     // TAP HANDLING
    // UPDATED TAP HANDLING
