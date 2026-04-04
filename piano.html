@@ -231,21 +231,22 @@ function keyPressed() {
     if (targetLane !== -1) checkHit(targetLane, true);
 }
 
-// ONE MASTER CHECKER (Hybrid Logic: Handles Mouse Precision AND Keyboard Rhythm)
-function checkHit(lane, isKeyboard = false) {
+// ONE MASTER CHECKER (Final Logic: Supports CLICK and KEYBOARD modes)
+function checkHit(lane) {
     let t = tiles[0]; 
     
     // 1. MUST HIT THE CORRECT LANE
     if (t && t.lane === lane) {
         
         // --- UPDATED PRECISION CHECK ---
-        // If it's a keyboard hit, we bypass the mouseY check.
-        // If it's a mouse click, you MUST be touching the black box.
-        let isTouching = isKeyboard || (mouseY >= t.y && mouseY <= t.y + t.h);
+        // If mode is KEYBOARD, we skip the mouse check.
+        // If mode is CLICK, you MUST be touching the black box vertically.
+        let isTouching = (controlMode === "KEYBOARD") || (mouseY >= t.y && mouseY <= t.y + t.h);
 
         if (isTouching) {
             
             // 2. BUFFER CHECK (Timing logic starts here)
+            // Checks if the tile has reached the "Hit Zone" at the bottom
             if (t.y + t.h > 100) {
                 
                 // 3. Calculate the distance for the "Perfect" bonus
@@ -268,7 +269,7 @@ function checkHit(lane, isKeyboard = false) {
             }
 
         } else {
-            // Clicked the row but missed the tile (Only triggers for Mouse)
+            // Clicked the row but missed the tile (Only triggers in CLICK mode)
             triggerGameOver();
         }
 
