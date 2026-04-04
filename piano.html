@@ -94,7 +94,14 @@ function setup() {
         let btn = document.createElement('button');
         btn.className = "btn";
         btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
-        btn.onclick = () => { currentSongUrl = s.url; loadAndStart(); };
+        
+        // --- THE KEY UPDATE IS HERE ---
+        btn.onclick = () => { 
+            currentSongUrl = s.url; 
+            currentPulseColor = s.color; // Capture the unique color from the object
+            loadAndStart(); 
+        };
+        
         list.appendChild(btn);
     });
 
