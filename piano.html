@@ -374,6 +374,10 @@ function toggleControls() {
     controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK";
     setup(); // Re-render menu to update button text
 }
+    function togglePro() {
+    isProMode = !isProMode; // The "!" flips true to false and vice-versa
+    console.log("Pro Mode is now: " + isProMode);
+}
 </script>
 </body>
 </html>
