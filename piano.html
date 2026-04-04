@@ -225,24 +225,31 @@
     }
 
     // TAP HANDLING
+   // UPDATED TAP HANDLING
     const handlePress = (ex, ey) => {
         if (!gameRunning) return;
-        let target = null;
-        let lowY = -1;
         
-        // Find the lowest unhit tile
-        tiles.forEach(t => {
-            if(!t.hit && (t.y + t.h) > lowY) {
-                target = t;
-                lowY = t.y + t.h;
-            }
-        });
+        let hitSuccessfully = false;
 
-        if (target && ex >= target.x && ex <= target.x + target.w && ey >= target.y && ey <= target.y + target.h) {
-            target.hit = true;
-            score++;
-            scoreEl.innerText = score;
-        } else {
+        // Look through ALL tiles to see if the tap landed on any black one
+        for (let i = 0; i < tiles.length; i++) {
+            let t = tiles[i];
+            
+            // Check if tap is inside this specific tile
+            if (!t.hit && 
+                ex >= t.x && ex <= t.x + t.w && 
+                ey >= t.y && ey <= t.y + t.h) {
+                
+                t.hit = true;
+                score++;
+                scoreEl.innerText = score;
+                hitSuccessfully = true;
+                break; // Stop looking once we hit a tile
+            }
+        }
+
+        // If you tapped but didn't hit a black tile, then you lose
+        if (!hitSuccessfully) {
             gameOver();
         }
     };
