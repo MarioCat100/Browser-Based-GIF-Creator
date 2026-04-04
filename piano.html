@@ -58,11 +58,11 @@ let mySound, amp, tiles = [], score = 0, gameState = "MENU";
 let currentSongUrl = "", speed = 6, alpha = 0;
 
 const mySongs = [
-    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3" },
-    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3" },
-    { name: "Tom Cruise", url: "./Tom Cruise.mp3" },
-     { name: "3005", url: "./3005.mp3" },
-    { name: "Rather Lie", url: "./RATHER LIE.mp3" }
+    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] }, // Soft Pink
+    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },   // Gold
+    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },          // Sky Blue (current)
+    { name: "3005", url: "./3005.mp3", color: [147, 112, 219] },                     // Deep Purple
+    { name: "Rather Lie", url: "./RATHER LIE.mp3", color: [173, 216, 230] }           // Light Blue
 ];
 
 function setup() {
