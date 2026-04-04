@@ -191,9 +191,21 @@
     }
 
     function spawnTile(yPos) {
-        const lane = Math.floor(Math.random() * 4);
-        tiles.push({ x: lane * laneWidth, y: yPos, w: laneWidth, h: 250, hit: false });
+    const lane = Math.floor(Math.random() * 4);
+    // We use a fixed height of 250 to match the spacing
+    tiles.push({ x: lane * laneWidth, y: yPos, w: laneWidth, h: 250, hit: false });
+}
+
+    function spawnInitialTiles() {
+    // Clear any old tiles
+    tiles = [];
+    // Start the first tile just off-screen
+    let lastY = -250; 
+    for (let i = 0; i < 6; i++) {
+        spawnTile(lastY);
+        lastY -= 250; // Move the next starting position up
     }
+}
 
     function gameLoop() {
         if (!gameRunning) return;
