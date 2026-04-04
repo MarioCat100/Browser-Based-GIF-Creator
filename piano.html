@@ -145,6 +145,15 @@ function draw() {
     textSize(50);
     textAlign(CENTER);
     text(score, width / 2, 80);
+// DRAW THE FEEDBACK POP-UP
+    if (feedbackTimer > 0) {
+        fill(feedbackColor);
+        noStroke();
+        textSize(40);
+        textAlign(CENTER);
+        text(feedbackText, width / 2, height / 2 + 50);
+        feedbackTimer--; // This makes it disappear after 25 frames
+    }
 }
 
 // INPUT HANDLING
