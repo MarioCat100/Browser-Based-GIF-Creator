@@ -220,16 +220,17 @@ function keyPressed() {
     if (targetLane !== -1) checkHit(targetLane);
 }
 
-// ONE MASTER CHECKER (Now with Perfect Zones & Early Penalty)
+// ONE MASTER CHECKER (Final Logic: Correct Lane = Stay Alive, Timing = Score)
 function checkHit(lane) {
     let t = tiles[0]; 
+    
+    // 1. MUST HIT THE CORRECT LANE (Otherwise you lose)
     if (t && t.lane === lane) {
         
-        // 1. Keep your existing BUFFER check (t.y + t.h > 100)
-        // This ensures WASD and taps feel fast and responsive.
+        // 2. BUFFER CHECK (Timing logic starts here)
         if (t.y + t.h > 100) {
             
-            // 2. Calculate the distance for the "Perfect" bonus
+            // 3. Calculate the distance for the "Perfect" bonus
             let distFromBottom = abs(height - (t.y + t.h));
 
             if (distFromBottom < 60) { 
@@ -242,15 +243,22 @@ function checkHit(lane) {
                 showFeedback("GOOD", "#2ecc71"); // Green
             }
             
+            // Remove the tile because you hit it successfully in the zone
             tiles.splice(0, 1);
+
         } else {
-            // UPDATED: You hit it, but it was still too high up.
+            // 4. TOO EARLY: Correct lane, but hit before the buffer
             // Instead of Game Over, we just take a point and keep going!
             score = max(0, score - 1); 
             showFeedback("TOO EARLY! -1", "#e74c3c"); // Red
+            
+            // We DON'T splice the tile here so you can still try to hit it 
+            // correctly as it continues to fall!
         }
+
     } else {
-        // Wrong lane! (Still an instant fail to keep it challenging)
+        // 5. WRONG LANE OR NO TILE: Instant Game Over
+        // Satisfies "hit the black tile otherwise you lose"
         triggerGameOver();
     }
 }
