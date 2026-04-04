@@ -143,19 +143,27 @@ class Tile {
 function draw() {
     if (gameState !== "PLAYING") return;
 
-    // 1. DYNAMIC BACKGROUND (Replaces background(255))
+    // 1. DYNAMIC BACKGROUND (Now with Custom Song Colors)
     if (pulseMode) {
         let vol = amp.getLevel();
-        // This maps volume to a pulsing blue/white color
-        let bgCol = map(vol, 0, 0.3, 255, 150); 
-        background(bgCol, bgCol, 255); 
+        
+        // Pull the R, G, and B values from the array we set when the button was clicked
+        let r = currentPulseColor[0];
+        let g = currentPulseColor[1];
+        let b = currentPulseColor[2];
+
+        // Map volume to fade from white (255) down to the song's specific color
+        let pR = map(vol, 0, 0.3, 255, r);
+        let pG = map(vol, 0, 0.3, 255, g);
+        let pB = map(vol, 0, 0.3, 255, b);
+
+        background(pR, pG, pB);
     } else {
         background(255); // Classic solid white
     }
     
     alpha = frameCount / 200; 
     let vol = amp.getLevel();
-    // Your existing varR logic for the tile speed bounce
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
     // 2. GRID
