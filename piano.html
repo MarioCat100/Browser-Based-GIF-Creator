@@ -220,49 +220,54 @@ function keyPressed() {
     if (targetLane !== -1) checkHit(targetLane);
 }
 
-// ONE MASTER CHECKER (Final Logic: Correct Lane = Stay Alive, Timing = Score)
+// ONE MASTER CHECKER (Precision Logic: Must hit the EXACT black box)
 function checkHit(lane) {
     let t = tiles[0]; 
     
-    // 1. MUST HIT THE CORRECT LANE (Otherwise you lose)
+    // 1. MUST HIT THE CORRECT LANE
     if (t && t.lane === lane) {
         
-        // 2. BUFFER CHECK (Timing logic starts here)
-        if (t.y + t.h > 100) {
+        // --- NEW PRECISION CHECK ---
+        // Checks if mouseY is between the top (t.y) and bottom (t.y + t.h) of the tile
+        if (mouseY >= t.y && mouseY <= t.y + t.h) {
             
-            // 3. Calculate the distance for the "Perfect" bonus
-            let distFromBottom = abs(height - (t.y + t.h));
+            // 2. BUFFER CHECK (Timing logic starts here)
+            if (t.y + t.h > 100) {
+                
+                // 3. Calculate the distance for the "Perfect" bonus
+                let distFromBottom = abs(height - (t.y + t.h));
 
-            if (distFromBottom < 60) { 
-                // PERFECT HIT: Within 60 pixels of the very bottom
-                score += 2; 
-                showFeedback("PERFECT!", "#f1c40f"); // Gold
+                if (distFromBottom < 60) { 
+                    // PERFECT HIT: Within 60 pixels of the very bottom
+                    score += 2; 
+                    showFeedback("PERFECT!", "#f1c40f"); // Gold
+                } else {
+                    // GOOD HIT: It was in the buffer zone, but not "Perfect"
+                    score += 1;
+                    showFeedback("GOOD", "#2ecc71"); // Green
+                }
+                
+                // Remove the tile because you hit it successfully
+                tiles.splice(0, 1);
+
             } else {
-                // GOOD HIT: It was in the buffer zone, but not "Perfect"
-                score += 1;
-                showFeedback("GOOD", "#2ecc71"); // Green
+                // 4. TOO EARLY: Correct lane, but hit before the buffer
+                score = max(0, score - 1); 
+                showFeedback("TOO EARLY! -1", "#e74c3c"); // Red
+                // Tile stays so you can try to hit it again as it falls
             }
-            
-            // Remove the tile because you hit it successfully in the zone
-            tiles.splice(0, 1);
 
         } else {
-            // 4. TOO EARLY: Correct lane, but hit before the buffer
-            // Instead of Game Over, we just take a point and keep going!
-            score = max(0, score - 1); 
-            showFeedback("TOO EARLY! -1", "#e74c3c"); // Red
-            
-            // We DON'T splice the tile here so you can still try to hit it 
-            // correctly as it continues to fall!
+            // CLICKED THE ROW BUT MISSED THE TILE (Too high or too low)
+            // This satisfies "hit the black tile otherwise you lose"
+            triggerGameOver();
         }
 
     } else {
         // 5. WRONG LANE OR NO TILE: Instant Game Over
-        // Satisfies "hit the black tile otherwise you lose"
         triggerGameOver();
     }
 }
-
 function triggerGameOver() {
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
