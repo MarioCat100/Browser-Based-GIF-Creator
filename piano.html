@@ -133,6 +133,11 @@ function mousePressed() {
 function triggerGameOver() {
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
+    
+    // CHANGE THE COLOR TO RED
+    fill(255, 0, 0); 
+    text(score, width / 2, 80); 
+    
     document.getElementById('final-score').innerText = "SCORE: " + score;
     document.getElementById('death-screen').classList.remove('hidden');
 }
