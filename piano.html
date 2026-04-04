@@ -110,7 +110,11 @@ function draw() {
         if (t.y > height) triggerGameOver();
     }
 
-    fill(0, 150); textAlign(CENTER); textSize(50);
+    // Change ONLY this fill line to (255, 0, 0)
+    fill(255, 0, 0); 
+    noStroke();
+    textSize(50);
+    textAlign(CENTER);
     text(score, width / 2, 80);
 }
 
