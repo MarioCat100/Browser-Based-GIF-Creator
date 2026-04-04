@@ -166,19 +166,35 @@ function keyPressed() {
     if (targetLane !== -1) checkHit(targetLane);
 }
 
-// ONE MASTER CHECKER
+// ONE MASTER CHECKER (Now with Perfect Zones)
 function checkHit(lane) {
     let t = tiles[0]; 
     if (t && t.lane === lane) {
-        // BUFFER: Allow hitting the tile if it's anywhere in the lower 80% of the screen
-        // This makes WASD feel much more responsive
+        // 1. Keep your existing BUFFER check (t.y + t.h > 100)
+        // This ensures WASD and taps feel fast and responsive.
         if (t.y + t.h > 100) {
+            
+            // 2. NEW: Calculate the distance for the "Perfect" bonus
+            // abs(height - (t.y + t.h)) finds how many pixels the tile is from the bottom
+            let distFromBottom = abs(height - (t.y + t.h));
+
+            if (distFromBottom < 60) { 
+                // PERFECT HIT: Within 60 pixels of the very bottom
+                score += 2; 
+                showFeedback("PERFECT!", "#f1c40f"); // Gold
+            } else {
+                // GOOD HIT: It was in the buffer zone, but not "Perfect"
+                score += 1;
+                showFeedback("GOOD", "#ffffff"); // White
+            }
+            
             tiles.splice(0, 1);
-            score++;
         } else {
+            // You hit it, but it was still too high up the screen
             triggerGameOver();
         }
     } else {
+        // Wrong lane!
         triggerGameOver();
     }
 }
