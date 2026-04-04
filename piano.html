@@ -38,6 +38,9 @@ const mySongs = [
 function setup() {
     createCanvas(windowWidth, windowHeight);
     amp = new p5.Amplitude();
+
+    // This tells the browser to treat the audio as a music stream
+p5.prototype.userStartAudio();
     
     // Build the menu buttons
     const lib = document.getElementById('library');
@@ -142,6 +145,12 @@ function draw() {
 }
 
 function mousePressed() {
+    function mousePressed() {
+    if (getAudioContext().state !== 'running') {
+        getAudioContext().resume();
+    }
+    // ... rest of your code
+}
     if (gameState !== "PLAYING") return;
 
     let hitSomething = false;
