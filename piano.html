@@ -136,9 +136,26 @@ function triggerGameOver() {
     document.getElementById('death-screen').classList.remove('hidden');
 }
 
-function restartGame() { startGame(); }
-function goHome() { location.reload(); }
-function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+function restartGame() {
+    // 1. Hide the death screen
+    document.getElementById('death-screen').classList.add('hidden');
+    
+    // 2. Reset all game variables
+    tiles = []; 
+    score = 0; 
+    speed = 6; 
+    frameCount = 0; // This resets the 'alpha' speed ramp-up
+    gameState = "PLAYING";
+    
+    // 3. Spawn the first tile to get it moving
+    tiles.push(new Tile(floor(random(4))));
+    
+    // 4. Restart the audio
+    if (mySound) {
+        mySound.stop();
+        mySound.play();
+    }
+}
 </script>
 </body>
 </html>
