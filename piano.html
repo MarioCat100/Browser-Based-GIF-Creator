@@ -67,21 +67,36 @@ const mySongs = [
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
+    
+    // 1. Grab the "Home Screen" overlay
+    const home = document.getElementById('home-screen');
+    
+    // 2. Set the "Shell" (The Title, The Pulse Button, and an empty Song List div)
+    home.innerHTML = `
+        <h1 style="letter-spacing: 5px; margin-top: 50px;">GOATED TILES</h1>
+        
+        <button class="btn" id="mode-btn" onclick="toggleMode()" 
+            style="background: ${pulseMode ? '#2ecc71' : '#666'}; margin-bottom: 20px;">
+            MODE: ${pulseMode ? 'VFX PULSE' : 'CLASSIC'}
+        </button>
+
+        <div id="song-list"></div>
+    `;
+
+    // 3. Now find that empty "song-list" div we just created above
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
+    // 4. Fill that div with your Kanye and K-Pop songs
     mySongs.forEach(s => {
-        // Look up the score for this song
         let savedBest = localStorage.getItem("best_" + s.url) || 0;
-        
         let btn = document.createElement('button');
         btn.className = "btn";
-        // Show Name + High Score on the button
         btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
-        
         btn.onclick = () => { currentSongUrl = s.url; loadAndStart(); };
         list.appendChild(btn);
     });
+
     amp = new p5.Amplitude();
 }
 
@@ -259,6 +274,10 @@ function showFeedback(txt, col) {
     feedbackText = txt;
     feedbackColor = col;
     feedbackTimer = 25; 
+}
+    function toggleMode() {
+    pulseMode = !pulseMode; // Flips the switch
+    setup(); // Re-runs the function above to update the button color
 }
 </script>
 </body>
