@@ -245,6 +245,11 @@ function goHome() {
 }
 
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+function showFeedback(txt, col) {
+    feedbackText = txt;
+    feedbackColor = col;
+    feedbackTimer = 25; 
+}
 </script>
 </body>
 </html>
