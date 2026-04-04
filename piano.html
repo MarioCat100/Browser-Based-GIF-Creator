@@ -3,286 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Goated Tiles">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-
-    <title>Goated Tiles</title>
-    
+    <title>Goated Tiles v2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
-        :root { --bg: #fff; --text: #000; --gray: #f0f0f0; }
-
-        /* 2. PREVENT BROWSER BOUNCE & ZOOM */
-        html, body { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            position: fixed; 
-            background: var(--bg);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            touch-action: none; /* Disables all browser gestures */
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        canvas { display: block; }
-
-        /* UI Overlays */
-        .overlay { 
-            position: absolute; 
-            inset: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            background: white; 
-            z-index: 10; 
-            padding: 20px;
-        }
-
-        #game-ui { 
-            position: absolute; 
-            top: 50px; 
-            width: 100%; 
-            text-align: center; 
-            pointer-events: none; 
-            z-index: 5; 
-        }
-
-        #score { font-size: 80px; font-weight: 900; color: rgba(0,0,0,0.1); }
-
-        /* Song Library */
-        .library-container { width: 100%; max-width: 400px; text-align: center; }
-        .song-list { 
-            width: 100%; 
-            max-height: 40vh; 
-            overflow-y: auto; 
-            border: 2px solid #000; 
-            margin: 20px 0; 
-            border-radius: 8px;
-        }
-        .song-item { 
-            padding: 20px; 
-            border-bottom: 1px solid var(--gray); 
-            font-weight: bold; 
-            text-align: left;
-            text-transform: uppercase;
-        }
-        .song-item:active { background: #000; color: #fff; }
-
-        /* Buttons */
-        .btn-group { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; }
-        button { 
-            padding: 20px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            background: #000; 
-            color: #fff; 
-            border: none; 
-            border-radius: 12px;
-            cursor: pointer;
-        }
-        .btn-secondary { background: #666; }
-        .hidden { display: none !important; }
-
-        input[type="file"] { margin-top: 10px; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        #menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; z-index: 10; font-family: sans-serif; }
+        .song-btn { width: 80%; padding: 15px; margin: 5px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="game-ui">
-    <div id="score">0</div>
+<div id="menu">
+    <h1 style="letter-spacing: 4px;">PIANO TILES</h1>
+    <div id="library" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        </div>
 </div>
-
-<div id="home-screen" class="overlay">
-    <h1 style="letter-spacing: 5px;">GOATED TILES</h1>
-    <div class="library-container">
-        <div class="song-list" id="library">
-            </div>
-        <p>OR UPLOAD MP3</p>
-        <input type="file" id="audioUpload" accept="audio/*">
-    </div>
-</div>
-
-<div id="death-screen" class="overlay hidden">
-    <h1 id="death-msg">FAILED</h1>
-    <h2 id="final-score">SCORE: 0</h2>
-    <div class="btn-group">
-        <button onclick="startGame()">RETRY</button>
-        <button class="btn-secondary" onclick="goHome()">HOME</button>
-    </div>
-</div>
-
-<canvas id="gameCanvas"></canvas>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); // Performance boost
-    const homeScreen = document.getElementById('home-screen');
-    const deathScreen = document.getElementById('death-screen');
-    const scoreEl = document.getElementById('score');
-    const libraryEl = document.getElementById('library');
-    const audioInput = document.getElementById('audioUpload');
+let mySound;
+let amp;
+let tiles = [];
+let score = 0;
+let gameState = "MENU"; // MENU, PLAYING, GAMEOVER
+let currentLane = 0;
+let speed = 7;
 
-    // CONFIGURATION
-    const songLibrary = [
-        { title: "Legendary Lovers", url: "./Legendary Lovers.mp3" }
-    ];
+// --- YOUR GITHUB SONGS ---
+const mySongs = [
+    { name: "KANYE - POWER", url: "./power.mp3" },
+    { name: "UPLOADED TRACK", url: "./song2.mp3" }
+];
 
-    let score = 0;
-    let tiles = [];
-    let gameRunning = false;
-    let speed = 7;
-    let laneWidth;
-    let audio = new Audio();
-    let currentSongUrl = "";
-    let audioCtx;
-
-    function init() {
-        resize();
-        loadLibrary();
-    }
-
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        laneWidth = canvas.width / 4;
-    }
-
-    function loadLibrary() {
-        libraryEl.innerHTML = '';
-        songLibrary.forEach(song => {
-            const div = document.createElement('div');
-            div.className = 'song-item';
-            div.innerText = song.title;
-            div.onclick = () => { currentSongUrl = song.url; startGame(); };
-            libraryEl.appendChild(div);
-        });
-    }
-
-    // GAME ENGINE
-    function startGame() {
-        // Unlock Audio Context for iOS/Android
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
-        homeScreen.classList.add('hidden');
-        deathScreen.classList.add('hidden');
-        
-        audio.src = currentSongUrl;
-        audio.currentTime = 0;
-        score = 0;
-        scoreEl.innerText = "0";
-        tiles = [];
-        speed = 8; 
-        gameRunning = true;
-        
-        audio.play();
-        for (let i = 0; i < 6; i++) {
-            spawnTile(canvas.height - (i * 250) - 500);
-        }
-        gameLoop();
-    }
-
-    function spawnTile(yPos) {
-    const lane = Math.floor(Math.random() * 4);
-    // We use a fixed height of 250 to match the spacing
-    tiles.push({ x: lane * laneWidth, y: yPos, w: laneWidth, h: 250, hit: false });
-}
-
-    function spawnInitialTiles() {
-    // Clear any old tiles
-    tiles = [];
-    // Start the first tile just off-screen
-    let lastY = -250; 
-    for (let i = 0; i < 6; i++) {
-        spawnTile(lastY);
-        lastY -= 250; // Move the next starting position up
-    }
-}
-
-    function gameLoop() {
-       // Inside the for-loop in gameLoop()
-if (t.y > canvas.height) {
-    tiles.splice(i, 1);
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    amp = new p5.Amplitude();
     
-    // Find the current highest tile (the one with the smallest Y value)
-    let highestY = 0;
-    tiles.forEach(tile => {
-        if (tile.y < highestY) highestY = tile.y;
+    // Build the menu buttons
+    const lib = document.getElementById('library');
+    mySongs.forEach(s => {
+        let btn = document.createElement('button');
+        btn.className = "song-btn";
+        btn.innerText = s.name;
+        btn.onclick = () => loadAndStart(s.url);
+        lib.appendChild(btn);
     });
-
-    // Spawn the new tile exactly one height above the highest one
-    spawnTile(highestY - 250);
-    
-    // Gradual speed increase
-    speed += 0.02;
 }
 
-    // TAP HANDLING
-   // UPDATED TAP HANDLING
-    const handlePress = (ex, ey) => {
-        if (!gameRunning) return;
-        
-        let hitSuccessfully = false;
+function loadAndStart(url) {
+    if (mySound) mySound.stop();
+    // Show a "Loading" state
+    document.getElementById('menu').innerHTML = "<h1>LOADING...</h1>";
+    
+    mySound = loadSound(url, () => {
+        document.getElementById('menu').style.display = "none";
+        resetGame();
+    });
+}
 
-        // Look through ALL tiles to see if the tap landed on any black one
-        for (let i = 0; i < tiles.length; i++) {
-            let t = tiles[i];
-            
-            // Check if tap is inside this specific tile
-            if (!t.hit && 
-                ex >= t.x && ex <= t.x + t.w && 
-                ey >= t.y && ey <= t.y + t.h) {
-                
-                t.hit = true;
-                score++;
-                scoreEl.innerText = score;
-                hitSuccessfully = true;
-                break; // Stop looking once we hit a tile
-            }
-        }
+function resetGame() {
+    tiles = [];
+    score = 0;
+    speed = 8;
+    gameState = "PLAYING";
+    currentLane = floor(random(4));
+    tiles.push(new Tile(currentLane));
+    mySound.play();
+}
 
-        // If you tapped but didn't hit a black tile, then you lose
-        if (!hitSuccessfully) {
-            gameOver();
-        }
-    };
-
-    // Use touchstart for zero-latency on mobile
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        handlePress(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive: false});
-
-    canvas.addEventListener('mousedown', (e) => handlePress(e.clientX, e.clientY));
-
-    function gameOver() {
-        gameRunning = false;
-        audio.pause();
-        document.getElementById('final-score').innerText = "SCORE: " + score;
-        deathScreen.classList.remove('hidden');
+class Tile {
+    constructor(lane) {
+        this.lane = lane;
+        this.w = width / 4;
+        this.h = height / 5;
+        this.x = this.lane * this.w;
+        this.y = -this.h;
+        this.hit = false;
     }
 
-    function goHome() {
-        deathScreen.classList.add('hidden');
-        homeScreen.classList.remove('hidden');
+    move() {
+        this.y += speed;
     }
 
-    audioInput.onchange = (e) => {
-        const file = e.target.files[0];
-        currentSongUrl = URL.createObjectURL(file);
-        startGame();
-    };
+    show() {
+        fill(this.hit ? 200 : 0);
+        stroke(100);
+        rect(this.x, this.y, this.w, this.h);
+    }
 
-    window.addEventListener('resize', resize);
-    init();
+    isOffScreen() {
+        return this.y > height;
+    }
+}
+
+function draw() {
+    if (gameState !== "PLAYING") return;
+    background(255);
+
+    // Draw grid lines
+    stroke(220);
+    for (let i = 1; i < 4; i++) {
+        line(i * width / 4, 0, i * width / 4, height);
+    }
+
+    // Handle Tiles
+    for (let i = tiles.length - 1; i >= 0; i--) {
+        let t = tiles[i];
+        t.move();
+        t.show();
+
+        // Check if missed
+        if (t.isOffScreen() && !t.hit) {
+            triggerGameOver();
+        }
+
+        // Remove old tiles
+        if (t.isOffScreen()) {
+            tiles.splice(i, 1);
+        }
+    }
+
+    // Spawn Logic (Fixed Spacing)
+    if (tiles.length > 0) {
+        let lastTile = tiles[tiles.length - 1];
+        if (lastTile.y > 0) {
+            currentLane = floor(random(4));
+            tiles.push(new Tile(currentLane));
+            speed += 0.01; // Scale difficulty
+        }
+    }
+
+    // UI
+    fill(0, 150);
+    noStroke();
+    textSize(50);
+    textAlign(CENTER);
+    text(score, width / 2, 80);
+}
+
+function mousePressed() {
+    if (gameState !== "PLAYING") return;
+
+    let hitSomething = false;
+    // Find the lowest unhit tile
+    for (let t of tiles) {
+        if (!t.hit && mouseX > t.x && mouseX < t.x + t.w && mouseY > t.y && mouseY < t.y + t.h) {
+            t.hit = true;
+            score++;
+            hitSomething = true;
+            break;
+        }
+    }
+
+    if (!hitSomething) {
+        triggerGameOver();
+    }
+}
+
+function triggerGameOver() {
+    gameState = "GAMEOVER";
+    mySound.stop();
+    alert("FAILED! Score: " + score);
+    location.reload(); // Quickest way to go back to menu
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
 </script>
 </body>
 </html>
