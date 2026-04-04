@@ -339,6 +339,11 @@ function showFeedback(txt, col) {
     pulseMode = !pulseMode; // Flips the switch
     setup(); // Re-runs the function above to update the button color
 }
+    // 2. Toggle for the Input System
+function toggleControls() {
+    controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK";
+    setup(); // Re-render menu to update button text
+}
 </script>
 </body>
 </html>
