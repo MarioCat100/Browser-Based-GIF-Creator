@@ -73,33 +73,39 @@ function setup() {
     // 1. Grab the "Home Screen" overlay
     const home = document.getElementById('home-screen');
     
-    // 2. Set the "Shell" (The Title, The Pulse Button, and an empty Song List div)
+    // 2. Set the Shell (Now with VFX and INPUT toggles)
     home.innerHTML = `
         <h1 style="letter-spacing: 5px; margin-top: 50px;">GOATED TILES</h1>
         
-        <button class="btn" id="mode-btn" onclick="toggleMode()" 
-            style="background: ${pulseMode ? '#2ecc71' : '#666'}; margin-bottom: 20px;">
-            MODE: ${pulseMode ? 'VFX PULSE' : 'CLASSIC'}
-        </button>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+            <button class="btn" onclick="togglePulse()" 
+                style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 130px;">
+                VFX: ${pulseMode ? 'ON' : 'OFF'}
+            </button>
+            
+            <button class="btn" onclick="toggleControls()" 
+                style="background: #3498db; width: 130px;">
+                MODE: ${controlMode}
+            </button>
+        </div>
 
         <div id="song-list"></div>
     `;
 
-    // 3. Now find that empty "song-list" div we just created above
+    // 3. Find the empty "song-list" div
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
-    // 4. Fill that div with your Kanye and K-Pop songs
+    // 4. Fill the list with Kanye/K-Pop tracks
     mySongs.forEach(s => {
         let savedBest = localStorage.getItem("best_" + s.url) || 0;
         let btn = document.createElement('button');
         btn.className = "btn";
         btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
         
-        // --- THE KEY UPDATE IS HERE ---
         btn.onclick = () => { 
             currentSongUrl = s.url; 
-            currentPulseColor = s.color; // Capture the unique color from the object
+            currentPulseColor = s.color; 
             loadAndStart(); 
         };
         
