@@ -41,6 +41,7 @@ const mySongs = [
 function setup() {
     createCanvas(windowWidth, windowHeight);
     const list = document.getElementById('song-list');
+    list.innerHTML = ""; // Clear list before building
     mySongs.forEach(s => {
         let btn = document.createElement('button');
         btn.className = "btn";
@@ -62,7 +63,7 @@ function loadAndStart() {
 }
 
 function startGame() {
-    tiles = []; score = 0; speed = 6; gameState = "PLAYING";
+    tiles = []; score = 0; speed = 6; frameCount = 0; gameState = "PLAYING";
     tiles.push(new Tile(floor(random(4))));
     mySound.play();
 }
@@ -87,11 +88,10 @@ function draw() {
     if (gameState !== "PLAYING") return;
     background(255);
     
-    alpha = frameCount / 200; // This makes it get faster over time
+    alpha = frameCount / 200; 
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    // Grid
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
@@ -100,17 +100,14 @@ function draw() {
         t.move(varR, alpha);
         t.show();
 
-        // Spawning logic from the "troll" code
         if (t.y > -t.h + 5 && t.once) {
             t.once = false;
             tiles.push(new Tile(floor(random(4))));
         }
 
-        // Lose if it hits the bottom
         if (t.y > height) triggerGameOver();
     }
 
-    // Change ONLY this fill line to (255, 0, 0)
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
@@ -118,24 +115,37 @@ function draw() {
     text(score, width / 2, 80);
 }
 
+// INPUT HANDLING
 function mousePressed() {
     if (gameState !== "PLAYING") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
-
-    // 1. Convert mouse click to a lane (0-3)
     let clickedLane = floor(mouseX / (width / 4));
-    
-    // 2. Send that lane to the master checker
     checkHit(clickedLane);
 }
 
-// THE MASTER CHECKER (Add this function below mousePressed)
+function keyPressed() {
+    if (gameState !== "PLAYING") return;
+    let targetLane = -1;
+    if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW) targetLane = 0;
+    if (key === 's' || key === 'S' || keyCode === DOWN_ARROW) targetLane = 1;
+    if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 2;
+    if (key === 'w' || key === 'W' || keyCode === UP_ARROW) targetLane = 3; 
+
+    if (targetLane !== -1) checkHit(targetLane);
+}
+
+// ONE MASTER CHECKER
 function checkHit(lane) {
-    let t = tiles[0]; // Always check the lowest tile first
-    
-    if (t && !t.hit && t.lane === lane) {
-        tiles.splice(0, 1);
-        score++;
+    let t = tiles[0]; 
+    if (t && t.lane === lane) {
+        // BUFFER: Allow hitting the tile if it's anywhere in the lower 80% of the screen
+        // This makes WASD feel much more responsive
+        if (t.y + t.h > 100) {
+            tiles.splice(0, 1);
+            score++;
+        } else {
+            triggerGameOver();
+        }
     } else {
         triggerGameOver();
     }
@@ -144,93 +154,28 @@ function checkHit(lane) {
 function triggerGameOver() {
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
-    
-    // CHANGE THE COLOR TO RED
     fill(255, 0, 0); 
     text(score, width / 2, 80); 
-    
     document.getElementById('final-score').innerText = "SCORE: " + score;
     document.getElementById('death-screen').classList.remove('hidden');
 }
 
 function restartGame() {
-    // 1. Hide the death screen
     document.getElementById('death-screen').classList.add('hidden');
-    
-    // 2. Reset all game variables
-    tiles = []; 
-    score = 0; 
-    speed = 6; 
-    frameCount = 0; // This resets the 'alpha' speed ramp-up
-    gameState = "PLAYING";
-    
-    // 3. Spawn the first tile to get it moving
-    tiles.push(new Tile(floor(random(4))));
-    
-    // 4. Restart the audio
-    if (mySound) {
-        mySound.stop();
-        mySound.play();
-    }
+    startGame();
 }
-    function goHome() {
-    // 1. Stop the music and the game state
+
+function goHome() {
     if (mySound) mySound.stop();
     gameState = "MENU";
-    
-    // 2. Hide the Death Screen 
     document.getElementById('death-screen').classList.add('hidden');
-    
-    // 3. Show the Home Screen again
     const home = document.getElementById('home-screen');
     home.classList.remove('hidden');
-    
-    // 4. Reset the Home Screen content so the buttons work
-    home.innerHTML = `
-        <h1 style="letter-spacing: 5px;">GOATED TILES</h1>
-        <div id="song-list"></div>
-    `;
-    
-    // 5. Re-run setup to put the Kanye and K-Pop buttons back in the list
+    home.innerHTML = `<h1 style="letter-spacing: 5px;">GOATED TILES</h1><div id="song-list"></div>`;
     setup();
 }
-    function keyPressed() {
-    if (gameState !== "PLAYING") return;
 
-    // Map WASD and Arrow Keys to Lane Numbers (0, 1, 2, 3)
-    let targetLane = -1;
-
-    if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW) targetLane = 0;
-    if (key === 's' || key === 'S' || keyCode === DOWN_ARROW) targetLane = 1;
-    if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 2;
-    if (key === 'w' || key === 'W' || keyCode === UP_ARROW) targetLane = 3; 
-    // ^ Note: I used 'F' for the 4th lane since it's more ergonomic than 'W' 
-    // but you can change 'f' to 'w' if you prefer!
-
-    if (targetLane !== -1) {
-        checkHit(targetLane);
-    }
-}
-
-// We move the "Hit Logic" to its own function so both Mouse and Keys can use it
-function checkHit(lane) {
-    let hitSomething = false;
-    
-    // Check only the lowest tile (tiles[0])
-    let t = tiles[0]; 
-    if (t && !t.hit && t.lane === lane) {
-        // Only count it if it's actually on the screen
-        if (t.y + t.h > 0) {
-            tiles.splice(0, 1);
-            score++;
-            hitSomething = true;
-        }
-    }
-
-    if (!hitSomething) {
-        triggerGameOver();
-    }
-}
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 </script>
 </body>
 </html>
