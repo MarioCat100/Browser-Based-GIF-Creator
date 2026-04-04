@@ -211,13 +211,17 @@ function mousePressed() {
 
 function keyPressed() {
     if (gameState !== "PLAYING") return;
-    let targetLane = -1;
-    if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW) targetLane = 0;
-    if (key === 's' || key === 'S' || keyCode === DOWN_ARROW) targetLane = 1;
-    if (key === 'w' || key === 'W' || keyCode === RIGHT_ARROW) targetLane = 2;
-    if (key === 'd' || key === 'd' || keyCode === UP_ARROW) targetLane = 3; 
+    if (getAudioContext().state !== 'running') getAudioContext().resume();
 
-    if (targetLane !== -1) checkHit(targetLane);
+    let targetLane = -1;
+    // Standard WASD / Arrow Mapping
+    if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW)  targetLane = 0;
+    if (key === 'w' || key === 'W' || keyCode === UP_ARROW)    targetLane = 1;
+    if (key === 's' || key === 'S' || keyCode === DOWN_ARROW)  targetLane = 2;
+    if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 3; 
+
+    // Pass 'true' so checkHit knows to skip the MouseY precision check
+    if (targetLane !== -1) checkHit(targetLane, true);
 }
 
 // ONE MASTER CHECKER (Hybrid Logic: Handles Mouse Precision AND Keyboard Rhythm)
