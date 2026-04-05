@@ -62,7 +62,7 @@
 <body>
 
 <div id="home-screen" class="overlay">
-    <h1 style="letter-spacing: 5px;">GOATED TILES test80</h1>
+    <h1 style="letter-spacing: 5px;">GOATED TILES test67</h1>
     <div id="song-list"></div>
 </div>
 
@@ -112,8 +112,8 @@ function setup() {
     const home = document.getElementById('home-screen');
     
     // We'll use your existing 'canContinue' variable here
-  home.innerHTML = `
-        <h1 id="menu-title" style="letter-spacing: 5px; margin-top: 50px; transition: color 0.4s ease, transform 0.1s ease;">
+ home.innerHTML = `
+        <h1 id="menu-title" style="letter-spacing: 8px; margin-top: 40px; margin-bottom: 25px; font-size: 45px; transition: color 0.4s ease, transform 0.1s ease; font-weight: 900; text-transform: uppercase;">
             GOATED TILES
         </h1>
         
@@ -141,7 +141,6 @@ function setup() {
 
         <div id="song-list"></div>
     `;
-
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
@@ -246,34 +245,32 @@ function draw() {
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
+        // --- NEW: DYNAMIC TITLE UPDATE ---
+        let title = document.getElementById('menu-title');
+        if (title) {
+            // Fades color to match the song preview
+            title.style.color = `rgb(${r}, ${g}, ${b})`;
+            
+            // Subtle "throb" to the beat
+            let titleScale = map(vol, 0, 0.3, 1.0, 1.1);
+            title.style.transform = `scale(${titleScale})`;
+        }
+
         // --- DRAW PS3 RIBBONS ---
         noFill();
         strokeWeight(3);
         
         // We draw 3 overlapping waves with different offsets
         for (let i = 0; i < 3; i++) {
-            // Fades each layer slightly for depth
             stroke(r, g, b, 150 - (i * 40)); 
             
             beginShape();
             for (let x = 0; x <= width; x += 25) {
-                // The Math: x * 0.002 (tightness), frameCount * 0.02 (speed), i * 0.8 (layer offset)
                 let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
-                
-                // y = center + (sin wave * (base height + music pulse))
                 let y = height / 2 + sin(angle) * (60 + (vol * 500)); 
-                
                 vertex(x, y);
             }
             endShape();
-        }
-
-        // --- 2. TITLE THROB ---
-        let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
-        let titleElement = document.querySelector('.title-3d');
-        if (titleElement) {
-            titleElement.style.transform = `scale(${titleScale})`;
-            titleElement.style.transition = "transform 0.05s ease-out"; 
         }
         
         return; 
