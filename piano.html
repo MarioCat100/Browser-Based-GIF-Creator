@@ -204,15 +204,37 @@ function draw() {
             tiles.push(new Tile(floor(random(4))));
         }
 
-        if (t.y > height) triggerGameOver();
+        if (t.y > height) {
+            combo = 0; // RESET COMBO IF TILE PASSES
+            triggerGameOver();
+        }
     }
 
-    // 5. SCORE & FEEDBACK
+    // 5. SCORE & FEEDBACK & COMBO
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
     textAlign(CENTER);
     text(score, width / 2, 80);
+
+    // --- NEW COMBO SECTION ---
+    if (combo > 1) {
+        // Shakes based on music volume (Juice!)
+        let shake = map(vol, 0, 0.3, 0, 8); 
+        fill(255, 215, 0); // Gold
+        
+        // Text size grows as combo goes up, but caps at 70px
+        textSize(min(30 + combo, 70)); 
+        text("x" + combo, width / 2 + random(-shake, shake), 140);
+        
+        // Dynamic Ranks
+        let rank = "CLEAN";
+        if (combo > 15) rank = "CRISP";
+        if (combo > 30) rank = "GOATED";
+        
+        textSize(15);
+        text(rank, width / 2, 165);
+    }
 
     if (feedbackTimer > 0) {
         fill(feedbackColor);
@@ -221,18 +243,18 @@ function draw() {
         feedbackTimer--; 
     }
 
-    // 6. THE PRO BUTTON (Persistent UI - drawn last to stay on top)
+    // 6. THE PRO BUTTON
     rectMode(CORNER); 
-    fill(isProMode ? "#FFD700" : 200); // Gold if active, Gray if inactive
+    fill(isProMode ? "#FFD700" : 200); 
     stroke(0);
     strokeWeight(2);
-    rect(20, 20, 80, 40, 5); // Positioned top-left
+    rect(20, 20, 80, 40, 5); 
 
     fill(0);
     noStroke();
     textSize(16);
     textAlign(CENTER, CENTER);
-    text("PRO", 60, 40); // 60 is the center of the 80px wide button
+    text("PRO", 60, 40); 
 }
 // INPUT HANDLING
 function mousePressed() {
