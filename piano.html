@@ -493,6 +493,26 @@ function toggleControls() {
     if (mySound) mySound.play(); // Pick the beat back up
     showFeedback("RESUMED", "#9b59b6");
 }
+    let previewSound; // Global variable for the menu music
+
+function playMenuPreview() {
+    // 1. Stop any existing preview so they don't overlap
+    if (previewSound) previewSound.stop();
+    if (mySound) mySound.stop();
+
+    // 2. Pick a random song from your mySongs array
+    let randomSong = random(mySongs);
+    
+    // 3. Load and Play a "Preview"
+    previewSound = loadSound(randomSong.url, () => {
+        // Start 30 seconds in (or wherever the drop is)
+        previewSound.play();
+        previewSound.setVolume(0.5); // Keep it lower so it's not blasting
+        
+        // Update the background pulse color to match the song!
+        currentPulseColor = randomSong.color;
+    });
+}
 </script>
 </body>
 </html>
