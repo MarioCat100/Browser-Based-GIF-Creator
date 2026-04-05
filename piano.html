@@ -234,59 +234,143 @@ class Tile {
     }
 }
 
-// 1. Put this at the top of your script
-let dots = []; 
-
 function draw() {
-    // --- 1. MENU: HONEY DOTS & BREATHING BACKGROUND ---
+    // --- 1. MENU PULSE & PS3 WAVE LOGIC ---
     if (gameState === "MENU") {
+        background(0); // Pure black background for that "Midnight" vibe
+        
         let vol = amp.getLevel();
         let r = currentPulseColor[0];
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
-        // --- THE BREATHING BACKGROUND ---
-        // We create a deep tint of the song's color that pulses with the bass
-        let breath = map(vol, 0, 0.3, 10, 60); 
-        background(r * 0.05, g * 0.05, b * 0.05); // Base dark room
+        // --- DRAW PS3 RIBBONS ---
+        noFill();
+        strokeWeight(3);
         
-        noStroke();
-        fill(r, g, b, breath);
-        rect(0, 0, width, height); // The "Glow" layer
-
-        // --- THE HONEY DOTS ---
-        // Initialize 60 dots if the array is empty
-        if (dots.length < 60) {
-            for(let i=0; i<60; i++) {
-                dots.push({ x: random(width), y: random(height), seed: random(1000) });
+        // We draw 3 overlapping waves with different offsets
+        for (let i = 0; i < 3; i++) {
+            // Fades each layer slightly for depth
+            stroke(r, g, b, 150 - (i * 40)); 
+            
+            beginShape();
+            for (let x = 0; x <= width; x += 25) {
+                // The Math: x * 0.002 (tightness), frameCount * 0.02 (speed), i * 0.8 (layer offset)
+                let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
+                
+                // y = center + (sin wave * (base height + music pulse))
+                let y = height / 2 + sin(angle) * (60 + (vol * 500)); 
+                
+                vertex(x, y);
             }
+            endShape();
         }
 
-        fill(r, g, b, 180); // Dots are the song's color
-        dots.forEach(d => {
-            // Perlin Noise creates the "syrupy" movement
-            // Using frameCount * 0.003 makes it move slow and thick
-            let nX = noise(d.seed + frameCount * 0.003);
-            let nY = noise(d.seed + 500 + frameCount * 0.003);
-            
-            d.x = map(nX, 0, 1, -50, width + 50);
-            d.y = map(nY, 0, 1, -50, height + 50);
-            
-            // Dots expand slightly when the beat hits
-            let size = 4 + (vol * 60);
-            ellipse(d.x, d.y, size, size);
-        });
-
-        // --- TITLE THROB ---
+        // --- 2. TITLE THROB ---
         let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
         let titleElement = document.querySelector('.title-3d');
         if (titleElement) {
             titleElement.style.transform = `scale(${titleScale})`;
+            titleElement.style.transition = "transform 0.05s ease-out"; 
         }
         
         return; 
     }
-    // ... rest of gameplay draw code ...
+
+
+    // --- 2. GAMEPLAY STATE CHECK ---
+    if (gameState !== "PLAYING") return;
+
+    // --- 3. DYNAMIC BACKGROUND (Pulse Logic) ---
+    if (pulseMode) {
+        let vol = amp.getLevel();
+        let r = currentPulseColor[0];
+        let g = currentPulseColor[1];
+        let b = currentPulseColor[2];
+
+        let pR = map(vol, 0, 0.3, 255, r);
+        let pG = map(vol, 0, 0.3, 255, g);
+        let pB = map(vol, 0, 0.3, 255, b);
+        background(pR, pG, pB);
+    } else {
+        background(255);
+    }
+    
+    alpha = frameCount / 200; 
+    let vol = amp.getLevel();
+    let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
+
+    // --- 4. GRID ---
+    stroke(220);
+    for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
+
+    // --- 5. TILES (With Pro Multiplier) ---
+    let proMultiplier = isProMode ? 1.8 : 1.0; 
+
+    for (let i = tiles.length - 1; i >= 0; i--) {
+        let t = tiles[i];
+        t.move(varR * proMultiplier, alpha); 
+        t.show();
+
+        if (t.y > -t.h + 5 && t.once) {
+            t.once = false;
+            tiles.push(new Tile(floor(random(4))));
+        }
+
+        if (t.y > height) {
+            combo = 0; 
+            triggerGameOver();
+        }
+    }
+
+    // --- 6. HUD (Score, Combo, Feedback) ---
+    fill(255, 0, 0); 
+    noStroke();
+    textSize(50);
+    textAlign(CENTER);
+    text(score, width / 2, 80);
+
+    if (combo > 1) {
+        let shake = map(vol, 0, 0.3, 0, 8); 
+        fill(255, 215, 0); 
+        textSize(min(30 + combo, 70)); 
+        text("x" + combo, width / 2 + random(-shake, shake), 140);
+        
+        let m = floor(combo / 10) + 1;
+        if (m > 1) {
+            textSize(20);
+            text(m + "X POINTS", width / 2, 190);
+        }
+
+        let rank = "CLEAN";
+        if (combo > 15) rank = "CRISP";
+        if (combo > 30) rank = "GOATED";
+        
+        textSize(15);
+        fill(255); 
+        text(rank, width / 2, 165);
+    }
+
+    if (feedbackTimer > 0) {
+        fill(feedbackColor);
+        textSize(40);
+        text(feedbackText, width / 2, height / 2 + 50);
+        feedbackTimer--; 
+    }
+
+    // --- 7. THE PRO BUTTON ---
+    rectMode(CORNER); 
+    fill(isProMode ? "#FFD700" : 200); 
+    stroke(0);
+    strokeWeight(2);
+    rect(20, 20, 80, 40, 5); 
+
+    fill(0);
+    noStroke();
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text("PRO", 60, 40); 
+}
 // INPUT HANDLING
 function mousePressed() {
     if (gameState !== "PLAYING") return;
