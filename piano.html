@@ -357,21 +357,32 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
+    // --- PRACTICE MODE CHECK ---
+    if (canContinue) {
+        // 1. Clear the "death" tiles
+        tiles = []; 
+        // 2. Spawn a new start tile
+        tiles.push(new Tile(floor(random(4)))); 
+        // 3. Reset combo (penalty)
+        combo = 0; 
+        showFeedback("PRACTICE REVIVE!", "#9b59b6");
+        return; // EXIT HERE so the game keeps playing!
+    }
+
+    // --- NORMAL GAME OVER (Runs only if canContinue is false) ---
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
     
-    // 1. Create a unique key for this specific song
     let scoreKey = "best_" + currentSongUrl; 
-    
-    // 2. Get the old high score (default to 0 if it doesn't exist)
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
-    let isNewRecord = false;
-
-    // 3. Check if we beat it
+    
     if (score > previousBest) {
         localStorage.setItem(scoreKey, score);
-        isNewRecord = true;
     }
+    
+    // Show the Death Screen
+    document.getElementById('death-screen').classList.remove('hidden');
+}
 
     // 4. Update the Death Screen text
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
