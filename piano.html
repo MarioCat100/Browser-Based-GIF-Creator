@@ -170,10 +170,35 @@ class Tile {
         this.y = -this.h * 2;
         this.once = true;
     }
-    move(v, a) { this.y += (v * speed) + a; }
+
+    move(v, a) { 
+        this.y += (v * speed) + a; 
+    }
+
     show() {
-        fill(0); stroke(100);
-        rect(this.x, this.y, this.w, this.h);
+        push(); // Protects other drawing settings
+        
+        // 1. Subtle Outer Glow/Shadow
+        noStroke();
+        fill(0, 30); // Very faint shadow
+        rect(this.x + 8, this.y + 8, this.w - 16, this.h - 16, 15); 
+
+        // 2. The Main Tile Body
+        // Using a deep charcoal (#1a1a1e) instead of flat black
+        fill(26, 26, 30); 
+        stroke(255, 60); // A faint white rim makes it pop
+        strokeWeight(2);
+        
+        // 15px Rounded Corners for that modern app feel
+        rect(this.x + 5, this.y + 5, this.w - 10, this.h - 10, 15);
+        
+        // 3. The "Glass" Shine (This is the secret sauce)
+        // A semi-transparent white highlight at the top of the tile
+        fill(255, 25); 
+        noStroke();
+        rect(this.x + 12, this.y + 12, this.w - 24, this.h / 3.5, 8); 
+
+        pop();
     }
 }
 
