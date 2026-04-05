@@ -357,34 +357,39 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
-    // --- 1. PRACTICE MODE CHECK ---
+    // --- 1. PRACTICE MODE POP-UP CHECK ---
     if (canContinue) {
-        // Just clear the board and keep vibing
-        tiles = []; 
-        tiles.push(new Tile(floor(random(4)))); 
-        combo = 0; 
-        showFeedback("PRACTICE REVIVE!", "#9b59b6");
-        return; // EXIT HERE so the music doesn't stop and the death screen doesn't show
+        // Pause the beat so you don't miss the song while deciding
+        if (mySound) mySound.pause(); 
+        
+        // This creates a browser pop-up that pauses the code execution
+        let wantToContinue = confirm("PRACTICE MODE: Continue song?");
+        
+        if (wantToContinue) {
+            // THE REVIVE LOGIC
+            tiles = []; 
+            tiles.push(new Tile(floor(random(4)))); 
+            combo = 0; 
+            showFeedback("RESUMED", "#9b59b6");
+            if (mySound) mySound.play(); // Resume the Kanye/SZA track
+            return; // EXIT HERE: Don't run the Game Over logic
+        } 
+        // If you hit "Cancel" on the pop-up, it continues to the Game Over logic below
     }
 
-    // --- 2. NORMAL GAME OVER (Your original code) ---
+    // --- 2. NORMAL GAME OVER (Everything stays exactly as you had it) ---
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
     
-    // Create a unique key for this specific song
     let scoreKey = "best_" + currentSongUrl; 
-    
-    // Get the old high score
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = false;
 
-    // Check if we beat it
     if (score > previousBest) {
         localStorage.setItem(scoreKey, score);
         isNewRecord = true;
     }
 
-    // Update the Death Screen text
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
     document.getElementById('fail-text').innerText = failText;
     document.getElementById('fail-text').style.color = isNewRecord ? "#2ecc71" : "#e74c3c"; 
