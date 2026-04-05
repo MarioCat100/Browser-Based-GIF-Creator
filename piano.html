@@ -211,32 +211,42 @@ function draw() {
         }
     }
 
-    // 5. SCORE & FEEDBACK & COMBO
+    // 5. SCORE & FEEDBACK & COMBO (The HUD)
+    // --- THE SCORE ---
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
     textAlign(CENTER);
     text(score, width / 2, 80);
 
-    // --- NEW COMBO SECTION ---
+    // --- THE COMBO & MULTIPLIER ---
     if (combo > 1) {
-        // Shakes based on music volume (Juice!)
+        // Shake based on music volume (Juice!)
         let shake = map(vol, 0, 0.3, 0, 8); 
         fill(255, 215, 0); // Gold
         
-        // Text size grows as combo goes up, but caps at 70px
+        // Text size grows as combo goes up
         textSize(min(30 + combo, 70)); 
         text("x" + combo, width / 2 + random(-shake, shake), 140);
         
-        // Dynamic Ranks
+        // NEW: MULTIPLIER LOGIC (Every 10 hits)
+        let m = floor(combo / 10) + 1;
+        if (m > 1) {
+            textSize(20);
+            text(m + "X POINTS", width / 2, 190);
+        }
+
+        // DYNAMIC RANKS
         let rank = "CLEAN";
         if (combo > 15) rank = "CRISP";
         if (combo > 30) rank = "GOATED";
         
         textSize(15);
+        fill(255); // White for the rank text
         text(rank, width / 2, 165);
     }
 
+    // --- THE FEEDBACK (PERFECT/GOOD) ---
     if (feedbackTimer > 0) {
         fill(feedbackColor);
         textSize(40);
