@@ -212,24 +212,48 @@ class Tile {
 }
 
 function draw() {
-    // --- 1. MENU PULSE LOGIC (The "Throb") ---
+    // --- 1. MENU PULSE & PS3 WAVE LOGIC ---
     if (gameState === "MENU") {
-        background(0); // Keeps menu background black
+        background(0); // Pure black background for that "Midnight" vibe
+        
         let vol = amp.getLevel();
+        let r = currentPulseColor[0];
+        let g = currentPulseColor[1];
+        let b = currentPulseColor[2];
+
+        // --- DRAW PS3 RIBBONS ---
+        noFill();
+        strokeWeight(3);
         
-        // Map volume to a scale factor (1.0 to 1.15)
+        // We draw 3 overlapping waves with different offsets
+        for (let i = 0; i < 3; i++) {
+            // Fades each layer slightly for depth
+            stroke(r, g, b, 150 - (i * 40)); 
+            
+            beginShape();
+            for (let x = 0; x <= width; x += 25) {
+                // The Math: x * 0.002 (tightness), frameCount * 0.02 (speed), i * 0.8 (layer offset)
+                let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
+                
+                // y = center + (sin wave * (base height + music pulse))
+                let y = height / 2 + sin(angle) * (60 + (vol * 500)); 
+                
+                vertex(x, y);
+            }
+            endShape();
+        }
+
+        // --- 2. TITLE THROB ---
         let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
-        
-        // Select your 3D Gold Title and apply the scale
         let titleElement = document.querySelector('.title-3d');
         if (titleElement) {
             titleElement.style.transform = `scale(${titleScale})`;
             titleElement.style.transition = "transform 0.05s ease-out"; 
         }
         
-        // Stop draw loop here so it doesn't try to play the game in the menu
         return; 
     }
+
 
     // --- 2. GAMEPLAY STATE CHECK ---
     if (gameState !== "PLAYING") return;
