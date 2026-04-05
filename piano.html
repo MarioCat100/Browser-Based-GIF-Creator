@@ -8,14 +8,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
+    
     /* 1. BODY & BACKGROUND */
     body { 
         margin: 0; padding: 0; overflow: hidden; 
-        background: transparent; /* Allows p5.js canvas to show */
+        background: #000; /* Kills the white bar at the top */
         font-family: sans-serif; 
     }
 
-    /* 2. THE OVERLAY (Removing the white background) */
+    /* 2. THE OVERLAY */
     .overlay { 
         position: absolute; 
         inset: 0; 
@@ -23,8 +24,11 @@
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        background: transparent !important; /* FIXED: Removed white */
-        z-index: 10; 
+        text-align: center; /* Forces all child text to center */
+        background: transparent !important; 
+        z-index: 10;
+        /* Adds a tiny bit of space so content doesn't hit the notch */
+        padding-top: env(safe-area-inset-top); 
     }
 
     /* 3. THE BUTTONS */
