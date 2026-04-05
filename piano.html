@@ -8,15 +8,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
-    
     /* 1. BODY & BACKGROUND */
     body { 
         margin: 0; padding: 0; overflow: hidden; 
-        background: #000; /* Kills the white bar at the top */
+        background: transparent; /* Allows p5.js canvas to show */
         font-family: sans-serif; 
     }
 
-    /* 2. THE OVERLAY */
+    /* 2. THE OVERLAY (Removing the white background) */
     .overlay { 
         position: absolute; 
         inset: 0; 
@@ -24,11 +23,8 @@
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        text-align: center; /* Forces all child text to center */
-        background: transparent !important; 
-        z-index: 10;
-        /* Adds a tiny bit of space so content doesn't hit the notch */
-        padding-top: env(safe-area-inset-top); 
+        background: transparent !important; /* FIXED: Removed white */
+        z-index: 10; 
     }
 
     /* 3. THE BUTTONS */
@@ -66,7 +62,7 @@
 <body>
 
 <div id="home-screen" class="overlay">
-    <h1 style="letter-spacing: 5px;">GOATED TILES test70</h1>
+    <h1 style="letter-spacing: 5px;">GOATED TILES test67</h1>
     <div id="song-list"></div>
 </div>
 
@@ -116,12 +112,10 @@ function setup() {
     const home = document.getElementById('home-screen');
     
     // We'll use your existing 'canContinue' variable here
-home.innerHTML = `
-    <h1 id="menu-title" style="width: 100%; text-align: center; letter-spacing: 8px; margin-top: 40px; margin-bottom: 25px; font-size: 45px; transition: color 0.4s ease, transform 0.1s ease; font-weight: 900; text-transform: uppercase; display: block;">
-        GOATED TILES
-    </h1>
-    ...
-`;
+  home.innerHTML = `
+        <h1 id="menu-title" style="letter-spacing: 5px; margin-top: 50px; transition: color 0.4s ease, transform 0.1s ease;">
+            GOATED TILES
+        </h1>
         
         <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; width: 95%; margin-left: auto; margin-right: auto;">
             <button class="btn" onclick="togglePulse()" 
@@ -147,6 +141,7 @@ home.innerHTML = `
 
         <div id="song-list"></div>
     `;
+
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
@@ -251,32 +246,34 @@ function draw() {
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
-        // --- NEW: DYNAMIC TITLE UPDATE ---
-        let title = document.getElementById('menu-title');
-        if (title) {
-            // Fades color to match the song preview
-            title.style.color = `rgb(${r}, ${g}, ${b})`;
-            
-            // Subtle "throb" to the beat
-            let titleScale = map(vol, 0, 0.3, 1.0, 1.1);
-            title.style.transform = `scale(${titleScale})`;
-        }
-
         // --- DRAW PS3 RIBBONS ---
         noFill();
         strokeWeight(3);
         
         // We draw 3 overlapping waves with different offsets
         for (let i = 0; i < 3; i++) {
+            // Fades each layer slightly for depth
             stroke(r, g, b, 150 - (i * 40)); 
             
             beginShape();
             for (let x = 0; x <= width; x += 25) {
+                // The Math: x * 0.002 (tightness), frameCount * 0.02 (speed), i * 0.8 (layer offset)
                 let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
+                
+                // y = center + (sin wave * (base height + music pulse))
                 let y = height / 2 + sin(angle) * (60 + (vol * 500)); 
+                
                 vertex(x, y);
             }
             endShape();
+        }
+
+        // --- 2. TITLE THROB ---
+        let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
+        let titleElement = document.querySelector('.title-3d');
+        if (titleElement) {
+            titleElement.style.transform = `scale(${titleScale})`;
+            titleElement.style.transition = "transform 0.05s ease-out"; 
         }
         
         return; 
