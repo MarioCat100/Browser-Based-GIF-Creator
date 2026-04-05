@@ -147,11 +147,19 @@ function togglePractice() {
     setup(); // This re-draws the menu to show the purple 'ON' color
 }
 function loadAndStart() {
+    // 1. FORCE KILL the menu preview immediately
+    if (previewSound) {
+        previewSound.stop();
+        previewSound.dispose(); // Clears it from memory
+    }
+    
+    // 2. Kill any old game sound
     if (mySound) mySound.stop();
-    document.getElementById('home-screen').innerHTML = "<h1>LOADING...</h1>";
+
+    document.getElementById('home-screen').innerHTML = "<h1 class='title-3d' style='font-size:24px;'>LOADING...</h1>";
+    
     mySound = loadSound(currentSongUrl, () => {
         document.getElementById('home-screen').classList.add('hidden');
-        document.getElementById('death-screen').classList.add('hidden');
         startGame();
     });
 }
