@@ -347,21 +347,30 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
+    // 1. STOP THE BEAT (Pause instead of stop so we can resume)
+    if (mySound) mySound.pause(); 
+
+    // 2. CHECK FOR "SECOND CHANCE"
+    if (canContinue) {
+        gameState = "CONTINUE_SCREEN"; 
+        return; // EXIT HERE so we don't save the score yet!
+    }
+
+    // 3. FINAL GAME OVER (Only runs if canContinue is false)
     gameState = "GAMEOVER";
-    if (mySound) mySound.stop();
     
-    // 1. Create a unique key for this specific song
+    // Create the unique key for the song (Kanye, BIBI, etc.)
     let scoreKey = "best_" + currentSongUrl; 
     
-    // 2. Get the old high score (default to 0 if it doesn't exist)
+    // Get the previous best from Local Storage
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
-    let isNewRecord = false;
-
-    // 3. Check if we beat it
+    
+    // Check for New Record
     if (score > previousBest) {
         localStorage.setItem(scoreKey, score);
-        isNewRecord = true;
+        console.log("New Record Saved: " + score);
     }
+}
 
     // 4. Update the Death Screen text
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
