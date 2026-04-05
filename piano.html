@@ -358,30 +358,18 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
-    // --- 1. PRACTICE MODE POP-UP CHECK ---
+    gameState = "GAMEOVER";
+    if (mySound) mySound.pause(); // Pause so we can resume later!
+
+    // --- 1. PRACTICE MODE UI CHECK ---
+    const contBtn = document.getElementById('continue-btn');
     if (canContinue) {
-        // Pause the beat so you don't miss the song while deciding
-        if (mySound) mySound.pause(); 
-        
-        // This creates a browser pop-up that pauses the code execution
-        let wantToContinue = confirm("PRACTICE MODE: Continue song?");
-        
-        if (wantToContinue) {
-            // THE REVIVE LOGIC
-            tiles = []; 
-            tiles.push(new Tile(floor(random(4)))); 
-            combo = 0; 
-            showFeedback("RESUMED", "#9b59b6");
-            if (mySound) mySound.play(); // Resume the Kanye/SZA track
-            return; // EXIT HERE: Don't run the Game Over logic
-        } 
-        // If you hit "Cancel" on the pop-up, it continues to the Game Over logic below
+        contBtn.classList.remove('hidden'); // Show the Purple Resume button
+    } else {
+        contBtn.classList.add('hidden');    // Hide it for Normal Mode
     }
 
-    // --- 2. NORMAL GAME OVER (Everything stays exactly as you had it) ---
-    gameState = "GAMEOVER";
-    if (mySound) mySound.stop();
-    
+    // --- 2. YOUR ORIGINAL HIGH SCORE LOGIC (Kept exactly as requested) ---
     let scoreKey = "best_" + currentSongUrl; 
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = false;
