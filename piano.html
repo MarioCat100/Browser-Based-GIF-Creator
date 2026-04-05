@@ -374,6 +374,8 @@ function triggerGameOver() {
 
         localStorage.setItem(scoreKey, score);
 
+        isNewRecord = true;
+
     // 4. Update the Death Screen text
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
     document.getElementById('fail-text').innerText = failText;
