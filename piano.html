@@ -204,10 +204,29 @@ class Tile {
 }
 
 function draw() {
-    // 1. GAME STATE CHECK
+    // --- 1. MENU PULSE LOGIC (The "Throb") ---
+    if (gameState === "MENU") {
+        background(0); // Keeps menu background black
+        let vol = amp.getLevel();
+        
+        // Map volume to a scale factor (1.0 to 1.15)
+        let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
+        
+        // Select your 3D Gold Title and apply the scale
+        let titleElement = document.querySelector('.title-3d');
+        if (titleElement) {
+            titleElement.style.transform = `scale(${titleScale})`;
+            titleElement.style.transition = "transform 0.05s ease-out"; 
+        }
+        
+        // Stop draw loop here so it doesn't try to play the game in the menu
+        return; 
+    }
+
+    // --- 2. GAMEPLAY STATE CHECK ---
     if (gameState !== "PLAYING") return;
 
-    // 2. DYNAMIC BACKGROUND (Pulse Logic)
+    // --- 3. DYNAMIC BACKGROUND (Pulse Logic) ---
     if (pulseMode) {
         let vol = amp.getLevel();
         let r = currentPulseColor[0];
@@ -226,11 +245,11 @@ function draw() {
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    // 3. GRID
+    // --- 4. GRID ---
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
-    // 4. TILES (With Pro Multiplier)
+    // --- 5. TILES (With Pro Multiplier) ---
     let proMultiplier = isProMode ? 1.8 : 1.0; 
 
     for (let i = tiles.length - 1; i >= 0; i--) {
@@ -244,47 +263,39 @@ function draw() {
         }
 
         if (t.y > height) {
-            combo = 0; // RESET COMBO IF TILE PASSES
+            combo = 0; 
             triggerGameOver();
         }
     }
 
-    // 5. SCORE & FEEDBACK & COMBO (The HUD)
-    // --- THE SCORE ---
+    // --- 6. HUD (Score, Combo, Feedback) ---
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
     textAlign(CENTER);
     text(score, width / 2, 80);
 
-    // --- THE COMBO & MULTIPLIER ---
     if (combo > 1) {
-        // Shake based on music volume (Juice!)
         let shake = map(vol, 0, 0.3, 0, 8); 
-        fill(255, 215, 0); // Gold
-        
-        // Text size grows as combo goes up
+        fill(255, 215, 0); 
         textSize(min(30 + combo, 70)); 
         text("x" + combo, width / 2 + random(-shake, shake), 140);
         
-        // NEW: MULTIPLIER LOGIC (Every 10 hits)
         let m = floor(combo / 10) + 1;
         if (m > 1) {
             textSize(20);
             text(m + "X POINTS", width / 2, 190);
         }
 
-        // DYNAMIC RANKS
         let rank = "CLEAN";
         if (combo > 15) rank = "CRISP";
         if (combo > 30) rank = "GOATED";
         
         textSize(15);
-        fill(255); // White for the rank text
+        fill(255); 
         text(rank, width / 2, 165);
     }
 
-    // --- THE FEEDBACK (PERFECT/GOOD) ---
     if (feedbackTimer > 0) {
         fill(feedbackColor);
         textSize(40);
@@ -292,7 +303,7 @@ function draw() {
         feedbackTimer--; 
     }
 
-    // 6. THE PRO BUTTON
+    // --- 7. THE PRO BUTTON ---
     rectMode(CORNER); 
     fill(isProMode ? "#FFD700" : 200); 
     stroke(0);
