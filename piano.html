@@ -73,21 +73,17 @@
 <body>
 
 <div id="home-screen" class="overlay">
-    <div class="menu-container">
-        <h1 class="title-3d">GOATED TILES</h1>
-        <div id="song-list"></div>
-    </div>
+    <div id="menu-injection-point"></div>
 </div>
 
 <div id="death-screen" class="overlay hidden">
-    <div class="death-box" id="death-box-id">
-        <h1 id="fail-text" class="title-3d" style="font-size: 32px; margin-top: 0;">FAILED</h1>
+    <div class="death-box">
+        <h1 class="title-3d" style="font-size: 30px;">FAILED</h1>
+        <h2 id="final-score" style="color: white; margin-bottom: 15px;">SCORE: 0</h2>
         
-        <h2 id="final-score" style="color: white; margin-bottom: 20px;">SCORE: 0</h2>
-        
-        <button id="continue-btn" class="btn" style="background:#9b59b6; border:none; width: 100%; margin: 5px 0;" onclick="handleRevive()">CONTINUE</button>
-        <button class="btn" style="background:#444; width: 100%; margin: 5px 0;" onclick="restartGame()">RESTART</button>
-        <button class="btn" style="background:#222; width: 100%; margin: 5px 0;" onclick="goHome()">HOME</button>
+        <button id="continue-btn" class="btn" style="background:#9b59b6; border:none; margin-bottom:10px;" onclick="handleRevive()">CONTINUE</button>
+        <button class="btn" style="margin-bottom:10px;" onclick="restartGame()">RESTART</button>
+        <button class="btn" style="background:#333;" onclick="goHome()">HOME</button>
     </div>
 </div>
 
