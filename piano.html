@@ -407,24 +407,20 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
-    gameState = "GAMEOVER";
+    gameState = "GAMEOVER"; // Tiles stop, but draw() keeps them on screen
     
-    // 1. SOUND LOGIC: Pause for Practice, Stop for Normal
+    // 1. SOUND LOGIC (Keep existing)
     if (canContinue) {
         if (mySound) mySound.pause(); 
     } else {
         if (mySound) mySound.stop();
     }
 
-    // 2. PRACTICE MODE UI CHECK
+    // 2. PRACTICE MODE UI CHECK (Keep existing)
     const contBtn = document.getElementById('continue-btn');
-    if (canContinue) {
-        contBtn.style.display = "block"; 
-    } else {
-        contBtn.style.display = "none";
-    }
+    contBtn.style.display = canContinue ? "block" : "none";
 
-    // 3. YOUR ORIGINAL HIGH SCORE LOGIC
+    // 3. HIGH SCORE LOGIC (Keep your original code)
     let scoreKey = "best_" + currentSongUrl; 
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = (score > previousBest);
@@ -442,23 +438,27 @@ function triggerGameOver() {
         <span style="font-size: 18px; color: #666;">BEST: ${isNewRecord ? score : previousBest}</span>
     `;
     
-    // 4. THE DEATH SCREEN DELAY (Anti-Accidental Click)
+    // 4. WINDOW POP-IN & DELAY
     const deathScreen = document.getElementById('death-screen');
+    const deathBox = document.getElementById('death-box-id');
+    
     deathScreen.classList.remove('hidden');
     
-    // Select all buttons (Continue, Restart, Home)
-    let deathButtons = deathScreen.querySelectorAll('.btn');
-    
-    // Hide them immediately so you can't click them while tapping fast
+    // Trigger the CSS animation
+    setTimeout(() => {
+        deathBox.classList.add('show');
+    }, 10);
+
+    // Hide all buttons for 1.5s to prevent accidental clicks
+    let deathButtons = deathBox.querySelectorAll('.btn');
     deathButtons.forEach(btn => {
         btn.style.visibility = "hidden";
         btn.style.opacity = "0";
     });
 
-    // Wait 1.5 seconds, then fade them in nicely
     setTimeout(() => {
         deathButtons.forEach(btn => {
-            btn.style.transition = "opacity 0.5s"; // Smooth "premium" fade
+            btn.style.transition = "opacity 0.5s";
             btn.style.visibility = "visible";
             btn.style.opacity = "1";
         });
