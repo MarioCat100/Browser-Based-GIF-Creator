@@ -302,34 +302,36 @@ function checkHit(lane) {
             if (t.y + t.h > 100) {
                 let distFromBottom = abs(height - (t.y + t.h));
 
+                // NEW: Every 10 hits, your points per note increase (1x, 2x, 3x...)
+                let multiplier = floor(combo / 10) + 1; 
+
                 if (distFromBottom < 60) { 
-                    score += 2; 
-                    combo++; // <--- STREAK GROWS
-                    showFeedback("PERFECT!", "#f1c40f"); 
+                    score += (2 * multiplier); // Points scale with your streak!
+                    combo++; 
+                    showFeedback("PERFECT x" + multiplier, "#f1c40f"); 
                 } else {
-                    score += 1;
-                    combo++; // <--- STREAK GROWS
-                    showFeedback("GOOD", "#2ecc71"); 
+                    score += (1 * multiplier);
+                    combo++; 
+                    showFeedback("GOOD x" + multiplier, "#2ecc71"); 
                 }
                 
                 tiles.splice(0, 1);
 
             } else {
-                // TOO EARLY
-                combo = 0; // <--- STREAK DIES
-                score = max(0, score - 1); 
-                showFeedback("TOO EARLY! -1", "#e74c3c"); 
+                // TOO EARLY: Reset streak but keep playing if you want 
+                // (Or keep it as game over if you prefer)
+                combo = 0; 
+                score = max(0, score - 5); 
+                showFeedback("TOO EARLY!", "#e74c3c"); 
             }
 
         } else {
-            // Clicked lane but missed the box vertically
-            combo = 0; // <--- STREAK DIES
+            combo = 0; 
             triggerGameOver();
         }
 
     } else {
-        // WRONG LANE OR NO TILE
-        combo = 0; // <--- STREAK DIES
+        combo = 0; 
         triggerGameOver();
     }
 }
