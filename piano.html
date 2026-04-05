@@ -437,6 +437,18 @@ function toggleControls() {
     console.log("Practice Mode is now: " + canContinue);
     setup(); // This RE-DRAWS the home screen with the new color
 }
+    function handleRevive() {
+    // Hide the death screen and go back to playing
+    document.getElementById('death-screen').classList.add('hidden');
+    
+    tiles = []; 
+    tiles.push(new Tile(floor(random(4)))); 
+    combo = 0; 
+    
+    gameState = "PLAYING";
+    if (mySound) mySound.play(); // Pick the beat back up
+    showFeedback("RESUMED", "#9b59b6");
+}
 </script>
 </body>
 </html>
