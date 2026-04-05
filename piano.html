@@ -357,26 +357,37 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
+    // --- 1. PRACTICE MODE CHECK ---
+    if (canContinue) {
+        // Just clear the board and keep vibing
+        tiles = []; 
+        tiles.push(new Tile(floor(random(4)))); 
+        combo = 0; 
+        showFeedback("PRACTICE REVIVE!", "#9b59b6");
+        return; // EXIT HERE so the music doesn't stop and the death screen doesn't show
+    }
+
+    // --- 2. NORMAL GAME OVER (Your original code) ---
     gameState = "GAMEOVER";
     if (mySound) mySound.stop();
     
-    // 1. Create a unique key for this specific song
+    // Create a unique key for this specific song
     let scoreKey = "best_" + currentSongUrl; 
     
-    // 2. Get the old high score (default to 0 if it doesn't exist)
+    // Get the old high score
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = false;
 
-    // 3. Check if we beat it
+    // Check if we beat it
     if (score > previousBest) {
         localStorage.setItem(scoreKey, score);
         isNewRecord = true;
     }
 
-    // 4. Update the Death Screen text
+    // Update the Death Screen text
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
     document.getElementById('fail-text').innerText = failText;
-    document.getElementById('fail-text').style.color = isNewRecord ? "#2ecc71" : "#e74c3c"; // Green for win, Red for fail
+    document.getElementById('fail-text').style.color = isNewRecord ? "#2ecc71" : "#e74c3c"; 
     
     document.getElementById('final-score').innerHTML = `
         SCORE: ${score}<br>
@@ -385,7 +396,6 @@ function triggerGameOver() {
     
     document.getElementById('death-screen').classList.remove('hidden');
 }
-
 function restartGame() {
     document.getElementById('death-screen').classList.add('hidden');
     startGame();
