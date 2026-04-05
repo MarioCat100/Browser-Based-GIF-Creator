@@ -8,33 +8,56 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: sans-serif; }
-        .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; z-index: 10; }
-        .hidden { display: none !important; }
-        .btn { width: 80%; max-width: 300px; padding: 20px; margin: 10px; background: #000; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; }
-       #song-list { 
-        width: 90%; 
-        max-width: 400px;
-        height: 300px; /* Limits the height so it doesn't eat the whole page */
+    /* 1. BODY & BACKGROUND */
+    body { 
+        margin: 0; padding: 0; overflow: hidden; 
+        background: transparent; /* Allows p5.js canvas to show */
+        font-family: sans-serif; 
+    }
+
+    /* 2. THE OVERLAY (Removing the white background) */
+    .overlay { 
+        position: absolute; 
+        inset: 0; 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
-        overflow-y: auto; /* Adds a scrollbar if there are too many songs */
-        background: #f4f4f4;
-        border-radius: 15px;
-        padding: 10px;
-        border: 2px solid #000;
+        justify-content: center; 
+        background: transparent !important; /* FIXED: Removed white */
+        z-index: 10; 
     }
 
-    /* Makes the scrollbar look cleaner on Chrome/Safari */
-    #song-list::-webkit-scrollbar {
-        width: 8px;
+    /* 3. THE BUTTONS */
+    .btn { 
+        width: 80%; max-width: 300px; padding: 20px; margin: 10px; 
+        background: #000; color: #fff; border: 1px solid #f1c40f; 
+        border-radius: 12px; font-size: 18px; font-weight: bold; 
+        cursor: pointer;
     }
-    #song-list::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 10px;
+
+    /* 4. THE SONG LIST (Making it "Glassy") */
+    #song-list { 
+        width: 90%; 
+        max-width: 400px;
+        height: 300px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        overflow-y: auto; 
+        /* Subtle dark translucent look so waves show through slightly */
+        background: rgba(0, 0, 0, 0.4); 
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        padding: 10px;
+        border: 2px solid #f1c40f; /* Gold border to match the title */
     }
-    </style>
+
+    .hidden { display: none !important; }
+
+    /* Scrollbar */
+    #song-list::-webkit-scrollbar { width: 8px; }
+    #song-list::-webkit-scrollbar-thumb { background: #f1c40f; border-radius: 10px; }
+</style>
 </head>
 <body>
 
