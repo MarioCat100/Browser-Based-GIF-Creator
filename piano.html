@@ -318,17 +318,17 @@ function checkHit(lane) {
     let t = tiles[0]; 
     
     if (t && t.lane === lane) {
-        let isTouching = (controlMode === "KEYBOARD") || (mouseY >= t.y && mouseY <= t.y + t.h);
+        // --- MERCY BUFFER: Adds 20px of invisible "hit zone" ---
+        let buffer = 20; 
+        let isTouching = (controlMode === "KEYBOARD") || (mouseY >= t.y - buffer && mouseY <= t.y + t.h + buffer);
 
         if (isTouching) {
             if (t.y + t.h > 100) {
                 let distFromBottom = abs(height - (t.y + t.h));
-
-                // NEW: Every 10 hits, your points per note increase (1x, 2x, 3x...)
                 let multiplier = floor(combo / 10) + 1; 
 
                 if (distFromBottom < 60) { 
-                    score += (2 * multiplier); // Points scale with your streak!
+                    score += (2 * multiplier); 
                     combo++; 
                     showFeedback("PERFECT x" + multiplier, "#f1c40f"); 
                 } else {
@@ -336,22 +336,16 @@ function checkHit(lane) {
                     combo++; 
                     showFeedback("GOOD x" + multiplier, "#2ecc71"); 
                 }
-                
                 tiles.splice(0, 1);
-
             } else {
-                // TOO EARLY: Reset streak but keep playing if you want 
-                // (Or keep it as game over if you prefer)
                 combo = 0; 
                 score = max(0, score - 5); 
                 showFeedback("TOO EARLY!", "#e74c3c"); 
             }
-
         } else {
             combo = 0; 
             triggerGameOver();
         }
-
     } else {
         combo = 0; 
         triggerGameOver();
