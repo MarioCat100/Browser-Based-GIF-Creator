@@ -292,50 +292,44 @@ function keyPressed() {
     return false; // This prevents the screen from scrolling while you play
 }
 
-// ONE MASTER CHECKER (Final Logic: Supports CLICK and KEYBOARD modes)
 function checkHit(lane) {
     let t = tiles[0]; 
     
-    // 1. MUST HIT THE CORRECT LANE
     if (t && t.lane === lane) {
-        
-        // --- UPDATED PRECISION CHECK ---
-        // If mode is KEYBOARD, we skip the mouse check.
-        // If mode is CLICK, you MUST be touching the black box vertically.
         let isTouching = (controlMode === "KEYBOARD") || (mouseY >= t.y && mouseY <= t.y + t.h);
 
         if (isTouching) {
-            
-            // 2. BUFFER CHECK (Timing logic starts here)
-            // Checks if the tile has reached the "Hit Zone" at the bottom
             if (t.y + t.h > 100) {
-                
-                // 3. Calculate the distance for the "Perfect" bonus
                 let distFromBottom = abs(height - (t.y + t.h));
 
                 if (distFromBottom < 60) { 
                     score += 2; 
-                    showFeedback("PERFECT!", "#f1c40f"); // Gold
+                    combo++; // <--- STREAK GROWS
+                    showFeedback("PERFECT!", "#f1c40f"); 
                 } else {
                     score += 1;
-                    showFeedback("GOOD", "#2ecc71"); // Green
+                    combo++; // <--- STREAK GROWS
+                    showFeedback("GOOD", "#2ecc71"); 
                 }
                 
                 tiles.splice(0, 1);
 
             } else {
-                // 4. TOO EARLY: Correct lane/tile, but hit before the buffer
+                // TOO EARLY
+                combo = 0; // <--- STREAK DIES
                 score = max(0, score - 1); 
-                showFeedback("TOO EARLY! -1", "#e74c3c"); // Red
+                showFeedback("TOO EARLY! -1", "#e74c3c"); 
             }
 
         } else {
-            // Clicked the row but missed the tile (Only triggers in CLICK mode)
+            // Clicked lane but missed the box vertically
+            combo = 0; // <--- STREAK DIES
             triggerGameOver();
         }
 
     } else {
-        // 5. WRONG LANE OR NO TILE: Instant Game Over
+        // WRONG LANE OR NO TILE
+        combo = 0; // <--- STREAK DIES
         triggerGameOver();
     }
 }
