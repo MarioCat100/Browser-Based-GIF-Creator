@@ -353,24 +353,29 @@ function checkHit(lane) {
 }
 function triggerGameOver() {
     gameState = "GAMEOVER";
-    if (mySound) mySound.pause(); // Pause so we can resume later!
-
-    // --- 1. PRACTICE MODE UI CHECK ---
-    const contBtn = document.getElementById('continue-btn');
+    
+    // 1. SOUND LOGIC: Pause for Practice, Stop for Normal
     if (canContinue) {
-        contBtn.classList.remove('hidden'); // Show the Purple Resume button
+        if (mySound) mySound.pause(); 
     } else {
-        contBtn.classList.add('hidden');    // Hide it for Normal Mode
+        if (mySound) mySound.stop();
     }
 
-    // --- 2. YOUR ORIGINAL HIGH SCORE LOGIC (Kept exactly as requested) ---
+    // 2. PRACTICE MODE UI CHECK
+    const contBtn = document.getElementById('continue-btn');
+    if (canContinue) {
+        contBtn.style.display = "block"; 
+    } else {
+        contBtn.style.display = "none";
+    }
+
+    // 3. YOUR ORIGINAL HIGH SCORE LOGIC
     let scoreKey = "best_" + currentSongUrl; 
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
-    let isNewRecord = false;
+    let isNewRecord = (score > previousBest);
 
-    if (score > previousBest) {
+    if (isNewRecord) {
         localStorage.setItem(scoreKey, score);
-        isNewRecord = true;
     }
 
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
@@ -382,7 +387,27 @@ function triggerGameOver() {
         <span style="font-size: 18px; color: #666;">BEST: ${isNewRecord ? score : previousBest}</span>
     `;
     
-    document.getElementById('death-screen').classList.remove('hidden');
+    // 4. THE DEATH SCREEN DELAY (Anti-Accidental Click)
+    const deathScreen = document.getElementById('death-screen');
+    deathScreen.classList.remove('hidden');
+    
+    // Select all buttons (Continue, Restart, Home)
+    let deathButtons = deathScreen.querySelectorAll('.btn');
+    
+    // Hide them immediately so you can't click them while tapping fast
+    deathButtons.forEach(btn => {
+        btn.style.visibility = "hidden";
+        btn.style.opacity = "0";
+    });
+
+    // Wait 1.5 seconds, then fade them in nicely
+    setTimeout(() => {
+        deathButtons.forEach(btn => {
+            btn.style.transition = "opacity 0.5s"; // Smooth "premium" fade
+            btn.style.visibility = "visible";
+            btn.style.opacity = "1";
+        });
+    }, 1500); 
 }
 function restartGame() {
     document.getElementById('death-screen').classList.add('hidden');
