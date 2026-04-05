@@ -8,83 +8,93 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
 <style>
-   <style>
+    /* 1. GLOBAL & BACKGROUND */
     body { 
         margin: 0; padding: 0; overflow: hidden; 
-        background: #000; /* Pure black background for maximum contrast */
-        font-family: 'Arial Black', sans-serif; 
+        background: linear-gradient(135deg, #121212 0%, #000000 100%); 
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
     }
 
-    /* 1. THE 3D GOLD TITLE (Shifted Up) */
+    /* 2. THE 3D GOLD TEXT */
     .title-3d {
-        font-size: 38px;
+        font-family: 'Arial Black', Gadget, sans-serif;
+        font-size: 40px;
         font-weight: 900;
         text-transform: uppercase;
-        margin-bottom: 20px;
-        background: linear-gradient(to bottom, #fff6af 0%, #f1c40f 50%, #d4ac0d 100%);
+        background: linear-gradient(to bottom, #fff6af 0%, #f1c40f 45%, #d4ac0d 55%, #856d05 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-shadow: 0px 4px 0px #856d05, 0px 8px 15px rgba(0,0,0,0.5);
-        letter-spacing: 3px;
+        /* The 3D "Extrude" Effect */
+        text-shadow: 
+            0 1px 0 #999, 0 2px 0 #888, 0 3px 0 #777, 0 4px 0 #666,
+            0 5px 0 #555, 0 6px 1px rgba(0,0,0,.1), 0 0 5px rgba(0,0,0,.1),
+            0 1px 3px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.2), 0 5px 10px rgba(0,0,0,.25);
+        letter-spacing: 2px;
+        margin-bottom: 20px;
     }
 
-    /* 2. THE MENU CONTAINER (No more gray!) */
-    .menu-container, .death-box {
-        background: rgba(255, 255, 255, 0.05); /* Very light glass */
-        border: 2px solid #f1c40f; 
-        width: 85%;
-        max-width: 400px;
-        padding: 25px;
-        border-radius: 30px;
-        backdrop-filter: blur(15px);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: -50px; /* SHIFTS EVERYTHING UP */
-    }
-
+    /* 3. CONTAINERS (Dark Glass for Contrast) */
     .overlay { 
         position: absolute; inset: 0; 
         display: flex; flex-direction: column; align-items: center; 
-        justify-content: center; /* Centers the container, then we shift it up with margin */
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.75); 
+        backdrop-filter: blur(12px);
         z-index: 20; 
     }
 
-    /* 3. PREMIUM BUTTONS */
-    .btn, .toggle-btn { 
-        width: 100%; padding: 14px; 
-        background: #111; color: #fff; 
-        border: 1px solid #f1c40f; border-radius: 15px; 
-        font-size: 13px; font-weight: bold; cursor: pointer;
-        box-shadow: 0 4px 0 #000;
+    .menu-container, .death-box {
+        background: rgba(25, 25, 25, 0.9); /* Darker background so white text pops */
+        border: 2px solid #f1c40f; /* Gold rim */
+        width: 85%;
+        max-width: 400px;
+        padding: 30px;
+        border-radius: 25px;
+        box-shadow: 0 0 30px rgba(241, 196, 15, 0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: white; /* Fixes the unreadable text */
     }
 
+    /* 4. BUTTONS & LISTS */
+    .toggle-group {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 12px; width: 100%; margin-bottom: 25px;
+    }
+
+    .btn, .toggle-btn { 
+        width: 100%; padding: 15px; 
+        background: #333; color: #fff; 
+        border: 1px solid #444; border-radius: 12px; 
+        font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+
+    #song-list { width: 100%; max-height: 300px; overflow-y: auto; }
+    
     .song-item {
-        background: rgba(255, 255, 255, 0.1);
-        margin-bottom: 8px; padding: 12px; border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        margin-bottom: 10px; padding: 15px; border-radius: 12px;
         display: flex; justify-content: space-between; align-items: center;
-        color: white; width: 100%; border: none;
+        border: 1px solid rgba(255,255,255,0.1); color: white; width: 100%;
     }
 
     .hidden { display: none !important; }
-</style>
 </style>
 </head>
 <body>
 
 <div id="home-screen" class="overlay">
-    <div id="menu-injection-point"></div>
+    <h1 style="letter-spacing: 5px;">GOATED TILES test51</h1>
+    <div id="song-list"></div>
 </div>
 
 <div id="death-screen" class="overlay hidden">
-    <div class="death-box">
-        <h1 class="title-3d" style="font-size: 30px;">FAILED</h1>
-        <h2 id="final-score" style="color: white; margin-bottom: 15px;">SCORE: 0</h2>
-        
-        <button id="continue-btn" class="btn" style="background:#9b59b6; border:none; margin-bottom:10px;" onclick="handleRevive()">CONTINUE</button>
-        <button class="btn" style="margin-bottom:10px;" onclick="restartGame()">RESTART</button>
-        <button class="btn" style="background:#333;" onclick="goHome()">HOME</button>
-    </div>
+    <h1 id="fail-text">FAILED</h1>
+    <h2 id="final-score">SCORE: 0</h2>
+    <button id="continue-btn" class="btn" style="background:#9b59b6" onclick="handleRevive()">CONTINUE</button>
+    <button class="btn" onclick="restartGame()">RESTART</button>
+    <button class="btn" style="background:#666" onclick="goHome()">HOME</button>
 </div>
 
 <script>
@@ -124,54 +134,45 @@ function setup() {
     
     const home = document.getElementById('home-screen');
     
-    // 1. CLEANED INNER HTML (Title -> Buttons -> Songs)
+    // We'll use your existing 'canContinue' variable here
     home.innerHTML = `
-        <div class="menu-container">
-            <h1 class="title-3d">GOATED TILES</h1>
+        <h1 style="letter-spacing: 5px; margin-top: 50px;">GOATED TILES</h1>
+       
+<h1 class="title-3d">GOATED TILES</h1>
+        
+        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; width: 95%; margin-left: auto; margin-right: auto;">
+            <button class="btn" onclick="togglePulse()" 
+                style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 85px; padding: 10px; font-size: 12px;">
+                VFX: ${pulseMode ? 'ON' : 'OFF'}
+            </button>
+
+            <button class="btn" onclick="togglePro()" 
+                style="background: ${isProMode ? '#f1c40f' : '#666'}; width: 85px; padding: 10px; font-size: 12px; color: ${isProMode ? '#000' : '#fff'};">
+                PRO: ${isProMode ? 'ON' : 'OFF'}
+            </button>
+
+            <button class="btn" onclick="togglePractice()" 
+                style="background: ${canContinue ? '#9b59b6' : '#666'}; width: 85px; padding: 10px; font-size: 11px;">
+                PRACTICE: ${canContinue ? 'ON' : 'OFF'}
+            </button>
             
-            <div class="toggle-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 20px;">
-                <button class="btn" onclick="togglePulse()" 
-                    style="background: ${pulseMode ? '#2ecc71' : '#222'}; width: 100%; padding: 12px; font-size: 11px;">
-                    VFX: ${pulseMode ? 'ON' : 'OFF'}
-                </button>
-
-                <button class="btn" onclick="togglePro()" 
-                    style="background: ${isProMode ? '#f1c40f' : '#222'}; width: 100%; padding: 12px; font-size: 11px; color: ${isProMode ? '#000' : '#fff'};">
-                    PRO: ${isProMode ? 'ON' : 'OFF'}
-                </button>
-
-                <button class="btn" onclick="togglePractice()" 
-                    style="background: ${canContinue ? '#9b59b6' : '#222'}; width: 100%; padding: 12px; font-size: 10px;">
-                    PRACTICE: ${canContinue ? 'ON' : 'OFF'}
-                </button>
-                
-                <button class="btn" onclick="toggleControls()" 
-                    style="background: #3498db; width: 100%; padding: 12px; font-size: 11px;">
-                    ${controlMode}
-                </button>
-            </div>
-
-            <div id="song-list" style="width: 100%; max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+            <button class="btn" onclick="toggleControls()" 
+                style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">
+                ${controlMode}
+            </button>
         </div>
+
+        <div id="song-list"></div>
     `;
 
-    // 2. SONG LIST INJECTION
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
     mySongs.forEach(s => {
         let savedBest = localStorage.getItem("best_" + s.url) || 0;
         let btn = document.createElement('button');
-        // Using 'song-item' for the Spotify-style look from your CSS
-        btn.className = "song-item"; 
-        
-        btn.innerHTML = `
-            <div style="text-align: left;">
-                <div style="font-weight: bold; font-size: 14px; color: #fff;">${s.name}</div>
-                <div style="font-size: 10px; color: #f1c40f; opacity: 0.8;">BEST: ${savedBest}</div>
-            </div>
-            <div style="color: #fff; opacity: 0.5;">▶</div>
-        `;
+        btn.className = "btn";
+        btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
         
         btn.onclick = () => { 
             currentSongUrl = s.url; 
@@ -184,6 +185,7 @@ function setup() {
 
     amp = new p5.Amplitude();
 }
+
 
 
 // --- ADD THIS TO THE BOTTOM OF YOUR SCRIPT ---
