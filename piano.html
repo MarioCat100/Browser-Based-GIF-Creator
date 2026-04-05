@@ -9,7 +9,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; z-index: 10; }
+       .overlay { 
+            position: absolute; 
+            inset: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: rgba(0, 0, 0, 0.7); /* Translucent dark background */
+            z-index: 10; 
+        }
         .hidden { display: none !important; }
         .btn { width: 80%; max-width: 300px; padding: 20px; margin: 10px; background: #000; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; }
        #song-list { 
