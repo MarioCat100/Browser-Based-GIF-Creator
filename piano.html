@@ -137,11 +137,7 @@ function setup() {
     amp = new p5.Amplitude();
 }
 
-// Update this toggle function at the bottom
-function togglePractice() {
-    canContinue = !canContinue; 
-    setup(); 
-}
+
 
 // --- ADD THIS TO THE BOTTOM OF YOUR SCRIPT ---
 function togglePractice() {
@@ -431,6 +427,11 @@ function toggleControls() {
     isProMode = !isProMode; // Flip the true/false
     console.log("Pro Mode is now: " + isProMode);
     setup(); // <--- THIS RE-DRAWS THE MENU WITH THE NEW COLOR
+}
+    function togglePractice() {
+    canContinue = !canContinue; 
+    console.log("Practice Mode is now: " + canContinue);
+    setup(); // This RE-DRAWS the home screen with the new color
 }
 </script>
 </body>
