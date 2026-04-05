@@ -39,7 +39,7 @@
 <body>
 
 <div id="home-screen" class="overlay">
-    <h1 style="letter-spacing: 5px;">GOATED TILES test38</h1>
+    <h1 style="letter-spacing: 5px;">GOATED TILES test36</h1>
     <div id="song-list"></div>
 </div>
 
@@ -347,34 +347,21 @@ function checkHit(lane) {
     }
 }
 function triggerGameOver() {
-
     gameState = "GAMEOVER";
-
     if (mySound) mySound.stop();
-
     
-
     // 1. Create a unique key for this specific song
-
     let scoreKey = "best_" + currentSongUrl; 
-
     
-
     // 2. Get the old high score (default to 0 if it doesn't exist)
-
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
-
     let isNewRecord = false;
 
-
-
     // 3. Check if we beat it
-
     if (score > previousBest) {
-
         localStorage.setItem(scoreKey, score);
-
         isNewRecord = true;
+    }
 
     // 4. Update the Death Screen text
     let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
