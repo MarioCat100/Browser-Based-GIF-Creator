@@ -124,45 +124,54 @@ function setup() {
     
     const home = document.getElementById('home-screen');
     
-    // We'll use your existing 'canContinue' variable here
+    // 1. CLEANED INNER HTML (Title -> Buttons -> Songs)
     home.innerHTML = `
-        <h1 style="letter-spacing: 5px; margin-top: 50px;">GOATED TILES</h1>
-       
-<h1 class="title-3d">GOATED TILES</h1>
-        
-        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; width: 95%; margin-left: auto; margin-right: auto;">
-            <button class="btn" onclick="togglePulse()" 
-                style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 85px; padding: 10px; font-size: 12px;">
-                VFX: ${pulseMode ? 'ON' : 'OFF'}
-            </button>
-
-            <button class="btn" onclick="togglePro()" 
-                style="background: ${isProMode ? '#f1c40f' : '#666'}; width: 85px; padding: 10px; font-size: 12px; color: ${isProMode ? '#000' : '#fff'};">
-                PRO: ${isProMode ? 'ON' : 'OFF'}
-            </button>
-
-            <button class="btn" onclick="togglePractice()" 
-                style="background: ${canContinue ? '#9b59b6' : '#666'}; width: 85px; padding: 10px; font-size: 11px;">
-                PRACTICE: ${canContinue ? 'ON' : 'OFF'}
-            </button>
+        <div class="menu-container">
+            <h1 class="title-3d">GOATED TILES</h1>
             
-            <button class="btn" onclick="toggleControls()" 
-                style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">
-                ${controlMode}
-            </button>
-        </div>
+            <div class="toggle-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 20px;">
+                <button class="btn" onclick="togglePulse()" 
+                    style="background: ${pulseMode ? '#2ecc71' : '#222'}; width: 100%; padding: 12px; font-size: 11px;">
+                    VFX: ${pulseMode ? 'ON' : 'OFF'}
+                </button>
 
-        <div id="song-list"></div>
+                <button class="btn" onclick="togglePro()" 
+                    style="background: ${isProMode ? '#f1c40f' : '#222'}; width: 100%; padding: 12px; font-size: 11px; color: ${isProMode ? '#000' : '#fff'};">
+                    PRO: ${isProMode ? 'ON' : 'OFF'}
+                </button>
+
+                <button class="btn" onclick="togglePractice()" 
+                    style="background: ${canContinue ? '#9b59b6' : '#222'}; width: 100%; padding: 12px; font-size: 10px;">
+                    PRACTICE: ${canContinue ? 'ON' : 'OFF'}
+                </button>
+                
+                <button class="btn" onclick="toggleControls()" 
+                    style="background: #3498db; width: 100%; padding: 12px; font-size: 11px;">
+                    ${controlMode}
+                </button>
+            </div>
+
+            <div id="song-list" style="width: 100%; max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+        </div>
     `;
 
+    // 2. SONG LIST INJECTION
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
 
     mySongs.forEach(s => {
         let savedBest = localStorage.getItem("best_" + s.url) || 0;
         let btn = document.createElement('button');
-        btn.className = "btn";
-        btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
+        // Using 'song-item' for the Spotify-style look from your CSS
+        btn.className = "song-item"; 
+        
+        btn.innerHTML = `
+            <div style="text-align: left;">
+                <div style="font-weight: bold; font-size: 14px; color: #fff;">${s.name}</div>
+                <div style="font-size: 10px; color: #f1c40f; opacity: 0.8;">BEST: ${savedBest}</div>
+            </div>
+            <div style="color: #fff; opacity: 0.5;">▶</div>
+        `;
         
         btn.onclick = () => { 
             currentSongUrl = s.url; 
@@ -175,7 +184,6 @@ function setup() {
 
     amp = new p5.Amplitude();
 }
-
 
 
 // --- ADD THIS TO THE BOTTOM OF YOUR SCRIPT ---
