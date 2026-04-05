@@ -234,61 +234,37 @@ class Tile {
     }
 }
 
-let dots = []; // Add this to the TOP of your script
-
 function draw() {
-    // --- 1. MENU: HONEY DOTS & BREATHING BACKGROUND ---
+    // --- 1. MENU PULSE & PS3 WAVE LOGIC ---
     if (gameState === "MENU") {
+        background(0); // Pure black background for that "Midnight" vibe
+        
         let vol = amp.getLevel();
         let r = currentPulseColor[0];
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
-        // --- THE "BREATHING" BACKGROUND ---
-        // Maps volume to brightness (Deep black to subtle song color)
-        let breathAlpha = map(vol, 0, 0.3, 30, 100); 
-        background(r * 0.1, g * 0.1, b * 0.1); // Base dark tint
+        // --- DRAW PS3 RIBBONS ---
+        noFill();
+        strokeWeight(3);
         
-        // Overlay a "glow" that pulses with the music
-        noStroke();
-        fill(r, g, b, breathAlpha);
-        rect(0, 0, width, height);
-
-        // --- THE "HONEY" DOTS ---
-        // Initialize 50 dots if they don't exist
-        if (dots.length < 50) {
-            for(let i=0; i<50; i++) dots.push({x: random(width), y: random(height), offset: random(100)});
-        }
-
-        noStroke();
-        fill(r, g, b, 150); // Dots match song color
-
-        dots.forEach(d => {
-            // Perlin Noise makes them move "thick" like honey
-            // Using frameCount * 0.003 is the "Speed" of the honey flow
-            let nX = noise(d.offset + frameCount * 0.003);
-            let nY = noise(d.offset + 100 + frameCount * 0.003);
+        // We draw 3 overlapping waves with different offsets
+        for (let i = 0; i < 3; i++) {
+            // Fades each layer slightly for depth
+            stroke(r, g, b, 150 - (i * 40)); 
             
-            d.x = map(nX, 0, 1, -100, width + 100);
-            d.y = map(nY, 0, 1, -100, height + 100);
-            
-            // Dots grow slightly with the bass
-            let size = 5 + (vol * 50);
-            ellipse(d.x, d.y, size, size);
-        });
-
-        // --- 2. TITLE THROB ---
-        let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
-        let titleElement = document.querySelector('.title-3d');
-        if (titleElement) {
-            titleElement.style.transform = `scale(${titleScale})`;
-            titleElement.style.transition = "transform 0.05s ease-out"; 
+            beginShape();
+            for (let x = 0; x <= width; x += 25) {
+                // The Math: x * 0.002 (tightness), frameCount * 0.02 (speed), i * 0.8 (layer offset)
+                let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
+                
+                // y = center + (sin wave * (base height + music pulse))
+                let y = height / 2 + sin(angle) * (60 + (vol * 500)); 
+                
+                vertex(x, y);
+            }
+            endShape();
         }
-        
-        return; 
-    }
-
-    // ... rest of your Tile and Gameplay code stays exactly the same ...
 
         // --- 2. TITLE THROB ---
         let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
