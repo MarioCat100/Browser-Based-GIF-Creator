@@ -29,6 +29,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            <div id="death-screen" class="overlay hidden">
+    <div class="death-box">
+        <h1 id="fail-text" style="margin-top:0;">FAILED</h1>
+        <h2 id="final-score">SCORE: 0</h2>
+        
+        <button id="continue-btn" class="btn" style="background:#9b59b6; width:100%;" onclick="handleRevive()">CONTINUE</button>
+        <button class="btn" style="width:100%;" onclick="restartGame()">RESTART</button>
+        <button class="btn" style="background:#666; width:100%;" onclick="goHome()">HOME</button>
+    </div>
+</div>
         }
         .hidden { display: none !important; }
         .btn { width: 80%; max-width: 300px; padding: 20px; margin: 10px; background: #000; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; }
