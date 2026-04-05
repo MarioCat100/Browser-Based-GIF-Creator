@@ -234,49 +234,56 @@ class Tile {
     }
 }
 
+// --- Make sure let dots = []; is at the top of your script! ---
+
 function draw() {
-    // --- 1. MENU PULSE & PS3 WAVE LOGIC ---
+    // --- 1. MENU: HONEY DOTS & BREATHING BACKGROUND ---
     if (gameState === "MENU") {
-        background(0); // Pure black background for that "Midnight" vibe
-        
         let vol = amp.getLevel();
         let r = currentPulseColor[0];
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
-        // --- DRAW PS3 RIBBONS ---
-        noFill();
-        strokeWeight(3);
+        // 1.1 THE BREATHING BACKGROUND
+        // This pulses the darkness of the room based on the song volume
+        let breath = map(vol, 0, 0.3, 10, 80); 
+        background(r * 0.05, g * 0.05, b * 0.05); // Base tint
         
-        // We draw 3 overlapping waves with different offsets
-        for (let i = 0; i < 3; i++) {
-            // Fades each layer slightly for depth
-            stroke(r, g, b, 150 - (i * 40)); 
-            
-            beginShape();
-            for (let x = 0; x <= width; x += 25) {
-                // The Math: x * 0.002 (tightness), frameCount * 0.02 (speed), i * 0.8 (layer offset)
-                let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
-                
-                // y = center + (sin wave * (base height + music pulse))
-                let y = height / 2 + sin(angle) * (60 + (vol * 500)); 
-                
-                vertex(x, y);
+        noStroke();
+        fill(r, g, b, breath);
+        rect(0, 0, width, height); // The "glow" layer
+
+        // 1.2 THE HONEY DOTS (Perlin Noise Movement)
+        if (dots.length < 50) {
+            for(let i=0; i<50; i++) {
+                dots.push({ x: random(width), y: random(height), seed: random(1000) });
             }
-            endShape();
         }
 
-        // --- 2. TITLE THROB ---
+        fill(r, g, b, 180); 
+        dots.forEach(d => {
+            // Perlin noise creates the "syrup/honey" movement
+            let nX = noise(d.seed + frameCount * 0.003);
+            let nY = noise(d.seed + 500 + frameCount * 0.003);
+            
+            d.x = map(nX, 0, 1, -50, width + 50);
+            d.y = map(nY, 0, 1, -50, height + 50);
+            
+            let size = 4 + (vol * 60); // Dots grow on the beat
+            ellipse(d.x, d.y, size, size);
+        });
+
+        // 1.3 THE TITLE THROB & COLOR
         let titleScale = map(vol, 0, 0.3, 1.0, 1.15);
-        let titleElement = document.querySelector('.title-3d');
+        let titleElement = document.getElementById('main-title');
         if (titleElement) {
             titleElement.style.transform = `scale(${titleScale})`;
-            titleElement.style.transition = "transform 0.05s ease-out"; 
+            titleElement.style.color = `rgb(${r}, ${g}, ${b})`;
+            titleElement.style.transition = "transform 0.05s ease-out, color 0.3s ease";
         }
         
         return; 
     }
-
 
     // --- 2. GAMEPLAY STATE CHECK ---
     if (gameState !== "PLAYING") return;
