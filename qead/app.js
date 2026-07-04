@@ -12,7 +12,7 @@ let activeTimeline = [];
 let nextNoteIndex = 0;
 let gameAudio = null;
 
-// Custom Layout Settings
+// Custom Layout Key Bindings Setup
 const userSettings = {
     topLeft: 'q',
     topRight: 'e',
@@ -20,7 +20,6 @@ const userSettings = {
     bottomRight: 'd'
 };
 
-// Key-to-DOM Map using dynamic settings keys
 const getActiveKeyMap = () => ({
     [userSettings.topLeft]: { element: document.getElementById('box-top-left'), color: '#00f2fe' },
     [userSettings.topRight]: { element: document.getElementById('box-top-right'), color: '#ff2e7e' },
@@ -76,7 +75,6 @@ function parseOsuFile(rawText) {
     return notes.sort((a, b) => a.time - b.time);
 }
 
-// --- Engine Frame Loop ---
 function startGameLoop(parsedNotes) {
     activeTimeline = parsedNotes;
     nextNoteIndex = 0;
@@ -84,6 +82,7 @@ function startGameLoop(parsedNotes) {
     requestAnimationFrame(updateEngineClock);
 }
 
+// --- High-Speed Synchronization Engine Clock ---
 function updateEngineClock() {
     if (isPaused || !gameAudio) {
         requestAnimationFrame(updateEngineClock);
@@ -95,70 +94,53 @@ function updateEngineClock() {
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
 
-        // 1. Spawns the Shrinking Approach Ring (400ms warning window)
+        // 1. Spawns the Shape-Matched Square Approach Ring (400ms warning window)
         if (currentPlaybackTime >= note.time - 400 && currentPlaybackTime < note.time && !note.visualTriggered) {
             const el = document.getElementById(note.targetId);
             const keyMap = getActiveKeyMap();
             const matchingKeyData = Object.values(keyMap).find(item => item.element.id === note.targetId);
             
-            // Generate the dynamic approach ring DOM element
-            const ring = document.createElement('div');
-            ring.className = 'approach-ring';
-            ring.style.color = matchingKeyData.color; // Color-match to the quadrant
-            el.appendChild(ring);
+            // Build the rounded square element clone directly
+            const pulse = document.createElement('div');
+            pulse.className = 'note-pulse';
+            pulse.style.color = matchingKeyData.color; 
+            el.appendChild(pulse);
             
-            // Force reflow and trigger the linear shrink animation down to scale(1)
-            setTimeout(() => {
-                ring.style.transform = 'scale(1)';
-                ring.style.opacity = '1';
-            }, 10);
-            
-            // Store reference to clean it up later if player hits/misses
-            note.ringElement = ring;
+            note.pulseElement = pulse;
             note.visualTriggered = true;
         }
 
-        // 1.5 The Exact Hit Flash (Blinding peak burst at 0ms)
+        // 1.5 Target Hit Flash Execution (Blinding accent burst right at 0ms)
         if (currentPlaybackTime >= note.time && !note.flashed) {
             const el = document.getElementById(note.targetId);
             
-            // Remove the ring element instantly upon zero alignment
-            if (note.ringElement) {
-                note.ringElement.remove();
-            }
+            if (note.pulseElement) note.pulseElement.remove();
 
-            el.style.backgroundColor = '';
-            el.style.borderColor = '';
-            
             el.classList.add('hit-flash');
-            setTimeout(() => {
-                el.classList.remove('hit-flash');
-            }, 120);
+            setTimeout(() => el.classList.remove('hit-flash'), 120);
             note.flashed = true;
         }
 
-        // 2. Strict Miss Window Check (150ms trailing deadline)
+        // 2. Miss Check Evaluation Deadline
         if (currentPlaybackTime > note.time + 150 && !note.hit && !note.missed) {
             note.missed = true;
-            
-            if (note.ringElement) note.ringElement.remove();
+            if (note.pulseElement) note.pulseElement.remove();
             
             currentCombo = 0;
             comboDisplay.innerText = `${currentCombo}x`;
             
             const el = document.getElementById(note.targetId);
-            el.style.transition = 'none';
             el.style.borderColor = '#da3637';
-            setTimeout(() => { el.style.borderColor = ''; el.style.backgroundColor = ''; }, 100);
-
+            setTimeout(() => el.style.borderColor = '', 100);
             triggerJudgmentBurst(el, 'X', '#da3637');
+
             nextNoteIndex = i + 1;
         }
     }
     requestAnimationFrame(updateEngineClock);
 }
 
-// --- Optimized Hit Registration ---
+// --- High Precision Hit Registration ---
 function handleInputHit(targetId) {
     if (!gameAudio) return;
     const currentPlaybackTime = gameAudio.currentTime * 1000;
@@ -175,11 +157,7 @@ function handleInputHit(targetId) {
 
     if (targetNote) {
         targetNote.hit = true;
-        
-        // Remove approach ring instantly on active click registration
-        if (targetNote.ringElement) {
-            targetNote.ringElement.remove();
-        }
+        if (targetNote.pulseElement) targetNote.pulseElement.remove();
 
         const offset = Math.abs(currentPlaybackTime - targetNote.time);
         let scoreType = '300';
@@ -203,10 +181,7 @@ function handleInputHit(targetId) {
         comboDisplay.classList.add('bump');
 
         triggerJudgmentBurst(match.element, scoreType, burstColor);
-        
-        match.element.classList.remove('hit-flash');
-        match.element.style.borderColor = '';
-        match.element.style.backgroundColor = '';
+        el.classList.remove('hit-flash');
     }
 }
 
@@ -220,7 +195,7 @@ function triggerJudgmentBurst(element, text, color) {
     setTimeout(() => burst.remove(), 400);
 }
 
-// --- File Load Listener ---
+// --- Folder Load File Listener ---
 folderInput.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);
     const osuFile = files.find(f => f.name.endsWith('.osu'));
@@ -247,7 +222,7 @@ folderInput.addEventListener('change', async (e) => {
     }, { once: true });
 });
 
-// --- Input Event Listeners ---
+// --- Input Event Handlers ---
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (e.key === 'Escape') { togglePause(); return; }
@@ -266,7 +241,6 @@ window.addEventListener('keyup', (e) => {
     if (keyMap[key]) keyMap[key].element.classList.remove('active-press');
 });
 
-// Interactive touch bindings
 const keyMap = getActiveKeyMap();
 Object.keys(keyMap).forEach(key => {
     const item = keyMap[key];
