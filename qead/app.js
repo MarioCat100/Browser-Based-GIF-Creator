@@ -159,7 +159,7 @@ function updateEngineClock() {
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
 
-        if (currentPlaybackTime >= note.time - 400 && currentPlaybackTime < note.time && !note.visualTriggered) {
+        if (currentPlaybackTime >= note.time - 501 && currentPlaybackTime < note.time && !note.visualTriggered) {
             const el = document.getElementById(note.targetId);
             const keyMap = getActiveKeyMap();
             const matchingKeyData = Object.values(keyMap).find(item => item.element.id === note.targetId);
