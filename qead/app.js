@@ -221,7 +221,7 @@ function handleInputHit(targetId) {
     const targetNote = activeTimeline.find(note => {
         if (note.targetId !== targetId || note.hit || note.missed) return false;
         const offset = Math.abs(currentPlaybackTime - note.time);
-        const currentMaxWindow = note.isSpamDensity ? 180 : 150;
+        const currentMaxWindow = note.isSpamDensity ? 250 : 180;
         return offset <= currentMaxWindow;
     });
 
@@ -233,8 +233,8 @@ function handleInputHit(targetId) {
         let scoreType = '300';
         let burstColor = match.color;
         
-        const win300 = targetNote.isSpamDensity ? 75 : 50;
-        const win100 = targetNote.isSpamDensity ? 130 : 100;
+        const win300 = targetNote.isSpamDensity ? 140 : 90;
+        const win100 = targetNote.isSpamDensity ? 200 : 150;
 
         if (offset <= win300) {
             scoreType = '300';
