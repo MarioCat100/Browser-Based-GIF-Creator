@@ -132,8 +132,9 @@ function updateEngineClock() {
 
     const currentPlaybackTime = gameAudio.currentTime * 1000;
 
-    // Trigger end screen when the song ends or the timeline finishes
-    if (gameAudio.ended || (activeTimeline.length > 0 && currentPlaybackTime > activeTimeline[activeTimeline.length - 1].time + 500)) {
+    // FOOLPROOF END TRIGGER fallback check
+    const lastNote = activeTimeline[activeTimeline.length - 1];
+    if (gameAudio.ended || (lastNote && currentPlaybackTime > lastNote.time + 1000)) {
         triggerResultsScreen();
         return;
     }
@@ -235,7 +236,6 @@ function handleInputHit(targetId) {
         updateLiveAccuracy();
         triggerJudgmentBurst(match.element, scoreType, burstColor);
         
-        // FIXED: Corrected reference name from "el" to "match.element" to prevent frame engine crashes
         match.element.classList.remove('hit-flash');
     }
 }
@@ -248,6 +248,43 @@ function triggerJudgmentBurst(element, text, color) {
     burst.style.color = color;
     element.appendChild(burst);
     setTimeout(() => burst.remove(), 400);
+}
+
+// --- Dynamic Scorecard Compiler ---
+function triggerResultsScreen() {
+    isPaused = true;
+    if (gameAudio) gameAudio.pause();
+
+    const totalNotes = scoreStats.count300 + scoreStats.count100 + scoreStats.count50 + scoreStats.countMiss;
+    
+    let accuracy = 100.00;
+    if (totalNotes > 0) {
+        const totalPointsEarned = (scoreStats.count300 * 300) + (scoreStats.count100 * 100) + (scoreStats.count50 * 50);
+        const maxPossiblePoints = totalNotes * 300;
+        accuracy = (totalPointsEarned / maxPossiblePoints) * 100;
+    }
+
+    let grade = 'D';
+    let gradeColor = '#f85149';
+
+    if (accuracy === 100) { grade = 'SS'; gradeColor = '#f1c40f'; }
+    else if (accuracy >= 95) { grade = 'S'; gradeColor = '#f39c12'; }
+    else if (accuracy >= 90) { grade = 'A'; gradeColor = '#2ecc71'; }
+    else if (accuracy >= 80) { grade = 'B'; gradeColor = '#3498db'; }
+    else if (accuracy >= 70) { grade = 'C'; gradeColor = '#9b59b6'; }
+
+    document.getElementById('res300').innerText = scoreStats.count300;
+    document.getElementById('res100').innerText = scoreStats.count100;
+    document.getElementById('res50').innerText = scoreStats.count50;
+    document.getElementById('resMiss').innerText = scoreStats.countMiss;
+    document.getElementById('resMaxCombo').innerText = `${scoreStats.maxCombo}x`;
+    document.getElementById('resAccuracy').innerText = `${accuracy.toFixed(2)}%`;
+    
+    const gradeBadge = document.getElementById('resGrade');
+    gradeBadge.innerText = grade;
+    gradeBadge.style.color = gradeColor;
+
+    resultsOverlay.style.display = 'flex';
 }
 
 // --- Folder Load File Listener ---
