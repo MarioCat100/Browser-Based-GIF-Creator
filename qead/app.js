@@ -2,6 +2,7 @@ const pauseOverlay = document.getElementById('pauseOverlay');
 const pauseBtn = document.getElementById('pauseBtn');
 const resumeBtn = document.getElementById('resumeBtn');
 const comboDisplay = document.getElementById('comboDisplay');
+const liveAccuracyDisplay = document.getElementById('liveAccuracyDisplay');
 const songTitleDisplay = document.getElementById('songTitle');
 const folderInput = document.getElementById('folderInput');
 const uploadZone = document.getElementById('uploadZone');
@@ -45,6 +46,20 @@ function togglePause() {
         if (isPaused) gameAudio.pause();
         else gameAudio.play();
     }
+}
+
+// --- Dynamic Real-Time Accuracy Math Recalculator ---
+function updateLiveAccuracy() {
+    const totalProcessed = scoreStats.count300 + scoreStats.count100 + scoreStats.count50 + scoreStats.countMiss;
+    if (totalProcessed === 0) {
+        liveAccuracyDisplay.innerText = "100.00%";
+        return;
+    }
+    const currentPointsEarned = (scoreStats.count300 * 300) + (scoreStats.count100 * 100) + (scoreStats.count50 * 50);
+    const maxPossiblePoints = totalProcessed * 300;
+    const currentAccuracy = (currentPointsEarned / maxPossiblePoints) * 100;
+    
+    liveAccuracyDisplay.innerText = `${currentAccuracy.toFixed(2)}%`;
 }
 
 // --- .osu File Parsing Matrix ---
@@ -93,12 +108,16 @@ function startGameLoop(parsedNotes) {
     nextNoteIndex = 0;
     currentCombo = 0;
     
-    // Reset performance tracking metrics
     scoreStats.count300 = 0;
     scoreStats.count100 = 0;
     scoreStats.count50 = 0;
     scoreStats.countMiss = 0;
     scoreStats.maxCombo = 0;
+    
+    comboDisplay.innerText = "0x";
+    comboDisplay.style.display = 'block';
+    liveAccuracyDisplay.innerText = "100.00%";
+    liveAccuracyDisplay.style.display = 'block';
     
     mapLoaded = true;
     requestAnimationFrame(updateEngineClock);
@@ -113,7 +132,7 @@ function updateEngineClock() {
 
     const currentPlaybackTime = gameAudio.currentTime * 1000;
 
-    // Check if the song has ended and all parsed map objects have cleared out past execution windows
+    // Trigger end screen when the song ends or the timeline finishes
     if (gameAudio.ended || (activeTimeline.length > 0 && currentPlaybackTime > activeTimeline[activeTimeline.length - 1].time + 500)) {
         triggerResultsScreen();
         return;
@@ -153,6 +172,8 @@ function updateEngineClock() {
             scoreStats.countMiss++;
             currentCombo = 0;
             comboDisplay.innerText = `${currentCombo}x`;
+            
+            updateLiveAccuracy();
             
             const el = document.getElementById(note.targetId);
             el.style.borderColor = '#da3637';
@@ -207,12 +228,15 @@ function handleInputHit(targetId) {
         }
 
         comboDisplay.innerText = `${currentCombo}x`;
-        comboDisplay.style.display = 'block';
         comboDisplay.classList.remove('bump');
         void comboDisplay.offsetWidth; 
         comboDisplay.classList.add('bump');
 
+        updateLiveAccuracy();
         triggerJudgmentBurst(match.element, scoreType, burstColor);
+        
+        // FIXED: Corrected reference name from "el" to "match.element" to prevent frame engine crashes
+        match.element.classList.remove('hit-flash');
     }
 }
 
@@ -224,46 +248,6 @@ function triggerJudgmentBurst(element, text, color) {
     burst.style.color = color;
     element.appendChild(burst);
     setTimeout(() => burst.remove(), 400);
-}
-
-// --- Dynamic Scorecard Compiler ---
-function triggerResultsScreen() {
-    isPaused = true;
-    if (gameAudio) gameAudio.pause();
-
-    // Calculate accuracy percentage math equation profile
-    const totalNotes = scoreStats.count300 + scoreStats.count100 + scoreStats.count50 + scoreStats.countMiss;
-    
-    let accuracy = 100.00;
-    if (totalNotes > 0) {
-        const totalPointsEarned = (scoreStats.count300 * 300) + (scoreStats.count100 * 100) + (scoreStats.count50 * 50);
-        const maxPossiblePoints = totalNotes * 300;
-        accuracy = (totalPointsEarned / maxPossiblePoints) * 100;
-    }
-
-    // Determine osu! structured letter grade tier rankings
-    let grade = 'D';
-    let gradeColor = '#f85149'; // Default Red
-
-    if (accuracy === 100) { grade = 'SS'; gradeColor = '#f1c40f'; }
-    else if (accuracy >= 95) { grade = 'S'; gradeColor = '#f39c12'; }
-    else if (accuracy >= 90) { grade = 'A'; gradeColor = '#2ecc71'; }
-    else if (accuracy >= 80) { grade = 'B'; gradeColor = '#3498db'; }
-    else if (accuracy >= 70) { grade = 'C'; gradeColor = '#9b59b6'; }
-
-    // Mount text properties directly to DOM targets inside the results screen
-    document.getElementById('res300').innerText = scoreStats.count300;
-    document.getElementById('res100').innerText = scoreStats.count100;
-    document.getElementById('res50').innerText = scoreStats.count50;
-    document.getElementById('resMiss').innerText = scoreStats.countMiss;
-    document.getElementById('resMaxCombo').innerText = `${scoreStats.maxCombo}x`;
-    document.getElementById('resAccuracy').innerText = `${accuracy.toFixed(2)}%`;
-    
-    const gradeBadge = document.getElementById('resGrade');
-    gradeBadge.innerText = grade;
-    gradeBadge.style.color = gradeColor;
-
-    resultsOverlay.style.display = 'flex';
 }
 
 // --- Folder Load File Listener ---
@@ -293,7 +277,7 @@ folderInput.addEventListener('change', async (e) => {
     }, { once: true });
 });
 
-// --- Physical Input Handlers ---
+// --- Input Event Handlers ---
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (e.key === 'Escape') { togglePause(); return; }
