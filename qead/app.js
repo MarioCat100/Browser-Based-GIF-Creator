@@ -95,12 +95,12 @@ function updateEngineClock() {
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
 
-        // 1. Bright Visual Pre-Glow (400ms warning window)
+        // 1. Clean Line Pre-Glow (Keeps inside completely clear)
         if (currentPlaybackTime >= note.time - 400 && currentPlaybackTime < note.time && !note.visualTriggered) {
             const el = document.getElementById(note.targetId);
-            el.style.transition = 'background-color 0.4s ease-out, border-color 0.4s ease-out';
-            el.style.backgroundColor = 'rgba(255, 255, 255, 0.08)'; 
-            el.style.borderColor = 'rgba(255, 255, 255, 0.9)';      
+            el.style.transition = 'border-color 0.3s ease-out';
+            el.style.backgroundColor = 'transparent'; 
+            el.style.borderColor = 'rgba(255, 255, 255, 0.8)'; // Bright warning frame 
             note.visualTriggered = true;
         }
 
@@ -108,7 +108,7 @@ function updateEngineClock() {
         if (currentPlaybackTime >= note.time && !note.flashed) {
             const el = document.getElementById(note.targetId);
             
-            // Wipe the inline pre-glow styles so the full CSS color can explosion-burst
+            // Wipe the warning border instantly right as the color burst takes over
             el.style.backgroundColor = '';
             el.style.borderColor = '';
             
@@ -145,7 +145,6 @@ function handleInputHit(targetId) {
     const keyMap = getActiveKeyMap();
     let match = Object.values(keyMap).find(item => item.element.id === targetId);
 
-    // Lenient Hit Window: 150ms total window leeway before or after target
     const hitWindow = 150; 
     const targetNote = activeTimeline.find(note => 
         note.targetId === targetId && 
@@ -161,15 +160,14 @@ function handleInputHit(targetId) {
         let scoreType = '300';
         let burstColor = match.color;
         
-        // Fair and snappier grading criteria
         if (offset <= 50) {
             scoreType = '300';
         } else if (offset <= 100) {
             scoreType = '100';
-            burstColor = '#e1b12c'; // Gold shift
+            burstColor = '#e1b12c'; 
         } else {
             scoreType = '50';
-            burstColor = '#7f8fa6'; // Gray shift
+            burstColor = '#7f8fa6'; 
         }
 
         currentCombo++;
@@ -181,7 +179,6 @@ function handleInputHit(targetId) {
 
         triggerJudgmentBurst(match.element, scoreType, burstColor);
         
-        // Remove the flash visual state immediately upon structural execution
         match.element.classList.remove('hit-flash');
         match.element.style.borderColor = '';
         match.element.style.backgroundColor = '';
@@ -244,7 +241,7 @@ window.addEventListener('keyup', (e) => {
     if (keyMap[key]) keyMap[key].element.classList.remove('active-press');
 });
 
-// Interactive touch/mouse clicks integration
+// Interactive touch bindings
 const keyMap = getActiveKeyMap();
 Object.keys(keyMap).forEach(key => {
     const item = keyMap[key];
@@ -266,5 +263,4 @@ Object.keys(keyMap).forEach(key => {
 });
 
 pauseBtn.addEventListener('click', togglePause);
-resumeBtn.addEventListener('click', togglePause);
 resumeBtn.addEventListener('click', togglePause);
