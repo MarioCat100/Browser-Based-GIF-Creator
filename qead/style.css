@@ -119,23 +119,40 @@ body::before {
     transform: translateY(-1px);
 }
 
-/* Score & Combo Counter */
-.game-stats {
-    text-align: center;
-    margin-bottom: 25px;
-    height: 40px;
+/* =======================================================
+   FIXED: SHIFTED HUD LAYOUT ELEMENTS
+   ======================================================= */
+
+/* Locks live accuracy counter into the upper right corner */
+.live-accuracy-hud {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    font-size: 2.5rem;
+    font-weight: 900;
+    font-style: italic;
+    color: #4facfe;
+    text-shadow: 0 0 12px rgba(79, 172, 254, 0.5);
+    font-variant-numeric: tabular-nums;
+    z-index: 8;
+    display: none;
 }
 
-.combo-counter {
+/* Restores massive combo tracking text to the center-top lane */
+.live-combo-hud {
     font-size: 3rem;
     font-weight: 900;
     font-style: italic;
     color: #fff;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    margin-bottom: 25px;
+    height: 40px;
+    text-align: center;
+    z-index: 8;
     display: none;
 }
 
-.combo-counter.bump {
+.live-combo-hud.bump {
     animation: comboBump 0.1s ease-out;
 }
 
@@ -262,9 +279,7 @@ body::before {
 .btn-quit { background: linear-gradient(135deg, #da3637, #f85149); }
 .menu-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
 
-/* =======================================================
-   NEW: PREMIUM GLASSRESULTS END SCREEN STYLING
-   ======================================================= */
+/* Premium Glass Results Card */
 .results-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -277,31 +292,10 @@ body::before {
     backdrop-filter: blur(20px);
 }
 
-.results-title {
-    font-size: 1.6rem;
-    font-weight: 900;
-    letter-spacing: 3px;
-    color: #4facfe;
-    text-shadow: 0 0 15px rgba(79,172,254,0.4);
-}
+.results-title { font-size: 1.6rem; font-weight: 900; letter-spacing: 3px; color: #4facfe; text-shadow: 0 0 15px rgba(79,172,254,0.4); }
+.results-subtitle { font-size: 0.9rem; color: #aaa; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+.results-body { display: flex; align-items: center; justify-content: space-between; margin: 35px 0; gap: 20px; }
 
-.results-subtitle {
-    font-size: 0.9rem;
-    color: #aaa;
-    margin-top: 5px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.results-body {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 35px 0;
-    gap: 20px;
-}
-
-/* Glowing Dynamic Rank Letter Badge */
 .rank-badge {
     font-size: 7.5rem;
     font-weight: 900;
@@ -318,33 +312,14 @@ body::before {
     100% { transform: scale(1.03); filter: brightness(1.2); }
 }
 
-.stats-matrix {
-    flex: 1.2;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    text-align: left;
-}
-
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 1.1rem;
-    font-weight: 700;
-}
-
+.stats-matrix { flex: 1.2; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.stat-row { display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; }
 .stat-label { font-weight: 800; opacity: 0.6; }
 .perfect .stat-label { color: #00f2fe; opacity: 1; }
 .good .stat-label { color: #e1b12c; opacity: 1; }
 .meh .stat-label { color: #7f8fa6; opacity: 1; }
 .miss .stat-label { color: #da3637; opacity: 1; }
-
-.matrix-divider {
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 4px 0;
-}
-
+.matrix-divider { border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 4px 0; }
 .stat-row.total { font-size: 0.95rem; }
 .stat-row.total .stat-val { color: #00f2fe; }
 .results-footer .btn-retry { width: 100%; padding: 14px; }
