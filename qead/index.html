@@ -99,11 +99,38 @@
             position: relative;
         }
 
+        /* Folder Loader Dropzone */
+        .upload-zone {
+            text-align: center;
+            margin-bottom: 25px;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #1f6feb, #388bfd);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-block;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .upload-btn:hover {
+            box-shadow: 0 0 20px rgba(31, 111, 235, 0.5);
+            transform: translateY(-1px);
+        }
+
         /* Dynamic Feedback Elements (Score & Combo Counter) */
         .game-stats {
             text-align: center;
             margin-bottom: 25px;
-            height: 80px;
+            height: 40px;
         }
 
         .combo-counter {
@@ -164,7 +191,6 @@
 
         #box-top-right.active-press {
             background: rgba(255, 46, 126, 0.15);
-            border-color: #202620; /* Keep it uniform */
             border-color: #ff2e7e;
             color: #ff2e7e;
             box-shadow: 0 0 30px rgba(255, 46, 126, 0.4), inset 0 0 15px rgba(255, 46, 126, 0.2);
@@ -267,6 +293,14 @@
     </header>
 
     <main class="game-container">
+        <div class="upload-zone" id="uploadZone">
+            <label class="upload-btn">
+                📂 LOAD OSU! MAP FOLDER
+                <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+            </label>
+            <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">Select a local beatmap folder containing the .mp3 and .osu files</p>
+        </div>
+
         <div class="game-stats">
             <div class="combo-counter" id="comboDisplay">000x</div>
         </div>
@@ -293,9 +327,15 @@
         const pauseBtn = document.getElementById('pauseBtn');
         const resumeBtn = document.getElementById('resumeBtn');
         const comboDisplay = document.getElementById('comboDisplay');
+        const songTitleDisplay = document.getElementById('songTitle');
+        const folderInput = document.getElementById('folderInput');
+        const uploadZone = document.getElementById('uploadZone');
         
         let isPaused = false;
         let currentCombo = 0;
+        let activeTimeline = [];
+        let nextNoteIndex = 0;
+        let gameAudio = null;
 
         // Custom Layout Settings (Matches your preferred setup!)
         const userSettings = {
@@ -307,30 +347,32 @@
 
         // Key-to-DOM Map using dynamic settings keys
         const getActiveKeyMap = () => ({
-            [userSettings.topLeft]: document.getElementById('box-top-left'),
-            [userSettings.topRight]: document.getElementById('box-top-right'),
-            [userSettings.bottomLeft]: document.getElementById('box-bottom-left'),
-            [userSettings.bottomRight]: document.getElementById('box-bottom-right')
+            [userSettings.topLeft]: { element: document.getElementById('box-top-left'), color: '#00f2fe' },
+            [userSettings.topRight]: { element: document.getElementById('box-top-right'), color: '#ff2e7e' },
+            [userSettings.bottomLeft]: { element: document.getElementById('box-bottom-left'), color: '#ba49ff' },
+            [userSettings.bottomRight]: { element: document.getElementById('box-bottom-right'), color: '#00ff88' }
         });
 
         function togglePause() {
             isPaused = !isPaused;
             pauseOverlay.style.display = isPaused ? 'flex' : 'none';
+            if (gameAudio) {
+                if (isPaused) gameAudio.pause();
+                else gameAudio.play();
+            }
         }
 
         // Simulates an arcade particle burst and increments combo indicator
         function handleHitRegistration(element, color) {
             if (!element) return;
 
-            // Increment Combo
             currentCombo++;
             comboDisplay.innerText = `${currentCombo}x`;
             comboDisplay.style.display = 'block';
             comboDisplay.classList.remove('bump');
-            void comboDisplay.offsetWidth; // Force CSS reflow to trigger animation re-run
+            void comboDisplay.offsetWidth; // Force reflow
             comboDisplay.classList.add('bump');
 
-            // Generate Floating Text Effect
             const burst = document.createElement('div');
             burst.className = 'judgment-burst';
             burst.innerText = '300';
@@ -340,49 +382,150 @@
             setTimeout(() => burst.remove(), 400);
         }
 
-        // --- Event Handlers ---
+        // --- .osu File Parsing Matrix ---
+        function parseOsuFile(rawText) {
+            const lines = rawText.split('\n');
+            let isHitObjectsSection = false;
+            const notes = [];
 
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('//')) return;
+
+                if (line.startsWith('Title:')) {
+                    songTitleDisplay.innerText = `qead // ${line.split(':')[1].toUpperCase()}`;
+                }
+                
+                if (line === '[HitObjects]') {
+                    isHitObjectsSection = true;
+                    return;
+                }
+
+                if (isHitObjectsSection) {
+                    const parts = line.split(',');
+                    if (parts.length >= 3) {
+                        const x = parseInt(parts[0]);
+                        const y = parseInt(parts[1]);
+                        const time = parseInt(parts[2]);
+
+                        // 2x2 Quadrant conversion math
+                        let targetId = '';
+                        if (x < 256 && y < 192) targetId = 'box-top-left';
+                        else if (x >= 256 && y < 192) targetId = 'box-top-right';
+                        else if (x < 256 && y >= 192) targetId = 'box-bottom-left';
+                        else targetId = 'box-bottom-right';
+
+                        notes.push({ time, targetId, visualTriggered: false });
+                    }
+                }
+            });
+            return notes.sort((a, b) => a.time - b.time);
+        }
+
+        // --- Engine Frame Loop ---
+        function startGameLoop(parsedNotes) {
+            activeTimeline = parsedNotes;
+            nextNoteIndex = 0;
+            currentCombo = 0;
+            requestAnimationFrame(updateEngineClock);
+        }
+
+        function updateEngineClock() {
+            if (isPaused || !gameAudio) {
+                requestAnimationFrame(updateEngineClock);
+                return;
+            }
+
+            const currentPlaybackTime = gameAudio.currentTime * 1000;
+
+            while (nextNoteIndex < activeTimeline.length) {
+                const note = activeTimeline[nextNoteIndex];
+                
+                // 400ms anticipation visual alert
+                if (currentPlaybackTime >= note.time - 400 && !note.visualTriggered) {
+                    const el = document.getElementById(note.targetId);
+                    el.style.transition = 'border-color 0.4s ease-out';
+                    el.style.borderColor = 'rgba(255,255,255,0.7)';
+                    note.visualTriggered = true;
+                }
+
+                // Hit target timeline alignment
+                if (currentPlaybackTime >= note.time) {
+                    const el = document.getElementById(note.targetId);
+                    el.style.borderColor = ''; // reset border layout
+                    nextNoteIndex++;
+                } else {
+                    break;
+                }
+            }
+            requestAnimationFrame(updateEngineClock);
+        }
+
+        // --- File Load Listener ---
+        folderInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            const osuFile = files.find(f => f.name.endsWith('.osu'));
+            const audioFile = files.find(f => f.name.endsWith('.mp3'));
+
+            if (!osuFile || !audioFile) {
+                alert("Missing files! Make sure the folder contains a .osu and a .mp3 file.");
+                return;
+            }
+
+            uploadZone.style.display = 'none';
+
+            const rawOsuText = await osuFile.text();
+            const parsedNotes = parseOsuFile(rawOsuText);
+
+            const audioURL = URL.createObjectURL(audioFile);
+            gameAudio = new Audio(audioURL);
+
+            gameAudio.addEventListener('canplaythrough', () => {
+                setTimeout(() => {
+                    gameAudio.play();
+                    startGameLoop(parsedNotes);
+                }, 1000);
+            }, { once: true });
+        });
+
+        // --- Input Event Listeners ---
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             if (e.key === 'Escape') { togglePause(); return; }
 
             const keyMap = getActiveKeyMap();
             if (keyMap[key] && !isPaused && !e.repeat) {
-                const element = keyMap[key];
-                element.classList.add('active-press');
-                
-                // Pull custom computed accent colors for the float burst
-                const computedColor = window.getComputedStyle(element).getPropertyValue('color');
-                handleHitRegistration(element, computedColor);
+                const item = keyMap[key];
+                item.element.classList.add('active-press');
+                handleHitRegistration(item.element, item.color);
             }
         });
 
         window.addEventListener('keyup', (e) => {
             const key = e.key.toLowerCase();
             const keyMap = getActiveKeyMap();
-            if (keyMap[key]) keyMap[key].classList.remove('active-press');
+            if (keyMap[key]) keyMap[key].element.classList.remove('active-press');
         });
 
-        // Mobile/Mouse Hybrid Integration
+        // Interactive touch bindings
         const keyMap = getActiveKeyMap();
         Object.keys(keyMap).forEach(key => {
-            const element = keyMap[key];
+            const item = keyMap[key];
             
             const startPress = (e) => {
                 e.preventDefault();
                 if (isPaused) return;
-                element.classList.add('active-press');
-                const computedColor = window.getComputedStyle(element).getPropertyValue('color');
-                handleHitRegistration(element, computedColor);
+                item.element.classList.add('active-press');
+                handleHitRegistration(item.element, item.color);
             };
 
-            const endPress = () => element.classList.remove('active-press');
+            const endPress = () => item.element.classList.remove('active-press');
 
-            element.addEventListener('touchstart', startPress);
-            element.addEventListener('touchend', endPress);
-            element.addEventListener('mousedown', startPress);
-            element.addEventListener('mouseup', endPress);
-            element.addEventListener('mouseleave', endPress);
+            item.element.addEventListener('touchstart', startPress);
+            item.element.addEventListener('touchend', endPress);
+            item.element.addEventListener('mousedown', startPress);
+            item.element.addEventListener('mouseup', endPress);
+            item.element.addEventListener('mouseleave', endPress);
         });
 
         pauseBtn.addEventListener('click', togglePause);
