@@ -107,11 +107,14 @@ function updateEngineClock() {
         // 1.5 The Exact Hit Flash (Blinding peak burst at 0ms)
         if (currentPlaybackTime >= note.time && !note.flashed) {
             const el = document.getElementById(note.targetId);
+            
+            // Wipe the inline pre-glow styles so the full CSS color can explosion-burst
+            el.style.backgroundColor = '';
+            el.style.borderColor = '';
+            
             el.classList.add('hit-flash');
             setTimeout(() => {
                 el.classList.remove('hit-flash');
-                el.style.borderColor = '';
-                el.style.backgroundColor = '';
             }, 120);
             note.flashed = true;
         }
@@ -135,13 +138,14 @@ function updateEngineClock() {
     requestAnimationFrame(updateEngineClock);
 }
 
-// --- Hit Registration ---
+// --- Optimized Hit Registration ---
 function handleInputHit(targetId) {
     if (!gameAudio) return;
     const currentPlaybackTime = gameAudio.currentTime * 1000;
     const keyMap = getActiveKeyMap();
     let match = Object.values(keyMap).find(item => item.element.id === targetId);
 
+    // Lenient Hit Window: 150ms total window leeway before or after target
     const hitWindow = 150; 
     const targetNote = activeTimeline.find(note => 
         note.targetId === targetId && 
@@ -155,13 +159,17 @@ function handleInputHit(targetId) {
         
         const offset = Math.abs(currentPlaybackTime - targetNote.time);
         let scoreType = '300';
+        let burstColor = match.color;
         
-        if (offset <= 40) {
+        // Fair and snappier grading criteria
+        if (offset <= 50) {
             scoreType = '300';
-        } else if (offset <= 80) {
+        } else if (offset <= 100) {
             scoreType = '100';
+            burstColor = '#e1b12c'; // Gold shift
         } else {
             scoreType = '50';
+            burstColor = '#7f8fa6'; // Gray shift
         }
 
         currentCombo++;
@@ -171,9 +179,10 @@ function handleInputHit(targetId) {
         void comboDisplay.offsetWidth; 
         comboDisplay.classList.add('bump');
 
-        triggerJudgmentBurst(match.element, scoreType, match.color);
+        triggerJudgmentBurst(match.element, scoreType, burstColor);
         
-        match.element.style.transition = 'none';
+        // Remove the flash visual state immediately upon structural execution
+        match.element.classList.remove('hit-flash');
         match.element.style.borderColor = '';
         match.element.style.backgroundColor = '';
     }
@@ -235,7 +244,7 @@ window.addEventListener('keyup', (e) => {
     if (keyMap[key]) keyMap[key].element.classList.remove('active-press');
 });
 
-// Interactive touch bindings
+// Interactive touch/mouse clicks integration
 const keyMap = getActiveKeyMap();
 Object.keys(keyMap).forEach(key => {
     const item = keyMap[key];
@@ -257,4 +266,5 @@ Object.keys(keyMap).forEach(key => {
 });
 
 pauseBtn.addEventListener('click', togglePause);
+resumeBtn.addEventListener('click', togglePause);
 resumeBtn.addEventListener('click', togglePause);
