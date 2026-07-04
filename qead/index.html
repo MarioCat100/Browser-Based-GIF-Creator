@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>qead // rhythm engine</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #080810;
+            color: #fff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Ambient Animated Cyber Background (Simulating a blurred anime bg) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -10%; left: -10%; width: 120%; height: 120%;
+            background: radial-gradient(circle, rgba(122,58,255,0.15) 0%, rgba(255,46,126,0.05) 50%, rgba(8,8,16,1) 100%);
+            z-index: -1;
+            filter: blur(40px);
+            animation: pulseBg 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseBg {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Sleek Premium HUD */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            height: 70px;
+            background: rgba(16, 16, 24, 0.75);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .song-info {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .song-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hud-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .hud-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+        }
+
+        @media (min-width: 769px) { .hud-btn.mobile-only { display: none; } }
+
+        /* Game Arena Layout */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 70px);
+            width: 100%;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Dynamic Feedback Elements (Score & Combo Counter) */
+        .game-stats {
+            text-align: center;
+            margin-bottom: 25px;
+            height: 80px;
+        }
+
+        .combo-counter {
+            font-size: 3rem;
+            font-weight: 900;
+            font-style: italic;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            display: none;
+        }
+
+        .combo-counter.bump {
+            animation: comboBump 0.1s ease-out;
+        }
+
+        @keyframes comboBump {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); color: #00f2fe; }
+            100% { transform: scale(1); }
+        }
+
+        /* The 2x2 Glassmorphic Grid */
+        .rhythm-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            width: 85vw;
+            max-width: 440px;
+            aspect-ratio: 1 / 1;
+            gap: 25px;
+        }
+
+        .grid-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            position: relative;
+            transition: background 0.05s, border 0.05s, transform 0.05s;
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.01);
+        }
+
+        /* Neon Custom Glow Overlays for Keypresses */
+        #box-top-left.active-press {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: #00f2fe;
+            color: #00f2fe;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.4), inset 0 0 15px rgba(0, 242, 254, 0.2);
+            transform: scale(0.96);
+        }
+
+        #box-top-right.active-press {
+            background: rgba(255, 46, 126, 0.15);
+            border-color: #202620; /* Keep it uniform */
+            border-color: #ff2e7e;
+            color: #ff2e7e;
+            box-shadow: 0 0 30px rgba(255, 46, 126, 0.4), inset 0 0 15px rgba(255, 46, 126, 0.2);
+            transform: scale(0.96);
+        }
+
+        #box-bottom-left.active-press {
+            background: rgba(186, 73, 255, 0.15);
+            border-color: #ba49ff;
+            color: #ba49ff;
+            box-shadow: 0 0 30px rgba(186, 73, 255, 0.4), inset 0 0 15px rgba(186, 73, 255, 0.2);
+            transform: scale(0.96);
+        }
+
+        #box-bottom-right.active-press {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.4), inset 0 0 15px rgba(0, 255, 136, 0.2);
+            transform: scale(0.96);
+        }
+
+        /* Floating Combo Burst Text Generation */
+        .judgment-burst {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-style: italic;
+            pointer-events: none;
+            animation: floatUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            z-index: 50;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.7); opacity: 0; }
+            30% { transform: translateY(-20px) scale(1.1); opacity: 1; }
+            100% { transform: translateY(-40px) scale(1); opacity: 0; }
+        }
+
+        /* Pause Screen Matrix */
+        .pause-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(6, 6, 10, 0.9);
+            backdrop-filter: blur(15px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .pause-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 300px;
+        }
+
+        .menu-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff2e7e, #ba49ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .menu-btn {
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #fff;
+            letter-spacing: 1px;
+            transition: transform 0.1s, filter 0.2s;
+        }
+
+        .btn-continue { background: linear-gradient(135deg, #238636, #2ea44f); }
+        .btn-retry { background: linear-gradient(135deg, #1f6feb, #388bfd); }
+        .btn-quit { background: linear-gradient(135deg, #da3637, #f85149); }
+
+        .menu-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
+        .menu-btn:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <header class="hud">
+        <button class="hud-btn mobile-only" id="backBtn">◀ QUIT</button>
+        <div class="song-info">
+            <div class="song-title" id="songTitle">qead // active channel</div>
+        </div>
+        <button class="hud-btn mobile-only" id="pauseBtn">PAUSE ⏸</button>
+    </header>
+
+    <main class="game-container">
+        <div class="game-stats">
+            <div class="combo-counter" id="comboDisplay">000x</div>
+        </div>
+
+        <div class="rhythm-grid">
+            <div class="grid-box" id="box-top-left">Q</div>
+            <div class="grid-box" id="box-top-right">E</div>
+            <div class="grid-box" id="box-bottom-left">A</div>
+            <div class="grid-box" id="box-bottom-right">D</div>
+        </div>
+    </main>
+
+    <div class="pause-overlay" id="pauseOverlay">
+        <div class="pause-menu">
+            <div class="menu-title">// PAUSED</div>
+            <button class="menu-btn btn-continue" id="resumeBtn">CONTINUE</button>
+            <button class="menu-btn btn-retry" onclick="location.reload()">RETRY</button>
+            <button class="menu-btn btn-quit">QUIT TO MENU</button>
+        </div>
+    </div>
+
+    <script>
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const comboDisplay = document.getElementById('comboDisplay');
+        
+        let isPaused = false;
+        let currentCombo = 0;
+
+        // Custom Layout Settings (Matches your preferred setup!)
+        const userSettings = {
+            topLeft: 'q',
+            topRight: 'e',
+            bottomLeft: 'a',
+            bottomRight: 'd'
+        };
+
+        // Key-to-DOM Map using dynamic settings keys
+        const getActiveKeyMap = () => ({
+            [userSettings.topLeft]: document.getElementById('box-top-left'),
+            [userSettings.topRight]: document.getElementById('box-top-right'),
+            [userSettings.bottomLeft]: document.getElementById('box-bottom-left'),
+            [userSettings.bottomRight]: document.getElementById('box-bottom-right')
+        });
+
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseOverlay.style.display = isPaused ? 'flex' : 'none';
+        }
+
+        // Simulates an arcade particle burst and increments combo indicator
+        function handleHitRegistration(element, color) {
+            if (!element) return;
+
+            // Increment Combo
+            currentCombo++;
+            comboDisplay.innerText = `${currentCombo}x`;
+            comboDisplay.style.display = 'block';
+            comboDisplay.classList.remove('bump');
+            void comboDisplay.offsetWidth; // Force CSS reflow to trigger animation re-run
+            comboDisplay.classList.add('bump');
+
+            // Generate Floating Text Effect
+            const burst = document.createElement('div');
+            burst.className = 'judgment-burst';
+            burst.innerText = '300';
+            burst.style.color = color;
+            
+            element.appendChild(burst);
+            setTimeout(() => burst.remove(), 400);
+        }
+
+        // --- Event Handlers ---
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (e.key === 'Escape') { togglePause(); return; }
+
+            const keyMap = getActiveKeyMap();
+            if (keyMap[key] && !isPaused && !e.repeat) {
+                const element = keyMap[key];
+                element.classList.add('active-press');
+                
+                // Pull custom computed accent colors for the float burst
+                const computedColor = window.getComputedStyle(element).getPropertyValue('color');
+                handleHitRegistration(element, computedColor);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            const keyMap = getActiveKeyMap();
+            if (keyMap[key]) keyMap[key].classList.remove('active-press');
+        });
+
+        // Mobile/Mouse Hybrid Integration
+        const keyMap = getActiveKeyMap();
+        Object.keys(keyMap).forEach(key => {
+            const element = keyMap[key];
+            
+            const startPress = (e) => {
+                e.preventDefault();
+                if (isPaused) return;
+                element.classList.add('active-press');
+                const computedColor = window.getComputedStyle(element).getPropertyValue('color');
+                handleHitRegistration(element, computedColor);
+            };
+
+            const endPress = () => element.classList.remove('active-press');
+
+            element.addEventListener('touchstart', startPress);
+            element.addEventListener('touchend', endPress);
+            element.addEventListener('mousedown', startPress);
+            element.addEventListener('mouseup', endPress);
+            element.addEventListener('mouseleave', endPress);
+        });
+
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+    </script>
+</body>
+</html>
