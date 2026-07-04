@@ -17,6 +17,7 @@
     </header>
 
     <main class="game-container">
+        <!-- Folder Loader Dropzone -->
         <div class="upload-zone" id="uploadZone">
             <label class="upload-btn">
                 📂 LOAD OSU! MAP FOLDER
@@ -29,6 +30,7 @@
             <div class="combo-counter" id="comboDisplay">000x</div>
         </div>
 
+        <!-- The Arena Containment Grid -->
         <div class="arena-wrapper">
             <canvas id="gameCanvas"></canvas>
 
@@ -41,12 +43,43 @@
         </div>
     </main>
 
+    <!-- Pause Screen Matrix -->
     <div class="pause-overlay" id="pauseOverlay">
         <div class="pause-menu">
             <div class="menu-title">// PAUSED</div>
             <button class="menu-btn btn-continue" id="resumeBtn">CONTINUE</button>
             <button class="menu-btn btn-retry" onclick="location.reload()">RETRY</button>
-            <button class="menu-btn btn-quit">QUIT TO MENU</button>
+            <button class="menu-btn btn-quit" onclick="location.reload()">QUIT TO MENU</button>
+        </div>
+    </div>
+
+    <!-- NEW: Post-Game End Screen Overlay -->
+    <div class="results-overlay" id="resultsOverlay">
+        <div class="results-card">
+            <div class="results-header">
+                <div class="results-title">BEATMAP COMPLETED</div>
+                <div class="results-subtitle" id="resSongTitle">SONG TITLE</div>
+            </div>
+            
+            <div class="results-body">
+                <!-- Massive Rank Grade Indicator -->
+                <div class="rank-badge" id="resGrade">A</div>
+                
+                <!-- Performance Statistics Matrix -->
+                <div class="stats-matrix">
+                    <div class="stat-row perfect"><span class="stat-label">300</span><span class="stat-val" id="res300">0</span></div>
+                    <div class="stat-row good"><span class="stat-label">100</span><span class="stat-val" id="res100">0</span></div>
+                    <div class="stat-row meh"><span class="stat-label">50</span><span class="stat-val" id="res50">0</span></div>
+                    <div class="stat-row miss"><span class="stat-label">MISS</span><span class="stat-val" id="resMiss">0</span></div>
+                    <hr class="matrix-divider">
+                    <div class="stat-row total"><span class="stat-label">MAX COMBO</span><span class="stat-val" id="resMaxCombo">0x</span></div>
+                    <div class="stat-row total"><span class="stat-label">ACCURACY</span><span class="stat-val" id="resAccuracy">0.00%</span></div>
+                </div>
+            </div>
+
+            <div class="results-footer">
+                <button class="menu-btn btn-retry" onclick="location.reload()">PLAY AGAIN</button>
+            </div>
         </div>
     </div>
 
