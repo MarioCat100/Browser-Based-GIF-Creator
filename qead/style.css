@@ -156,20 +156,39 @@ body::before {
     gap: 25px;
 }
 
+.grid-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.05s, border 0.05s, transform 0.05s;
+    box-shadow: inset 0 0 15px rgba(255,255,255,0.01);
+}
+
 /* =======================================================
-   UPDATED FLASH & PRESS MATRIX (Color-Matched Peak Blasts)
+   FIXED FLASH MATRIX (Keeps Rounded Borders Safe)
    ======================================================= */
 
-/* Core Flash Rules (Shared layout properties) */
+/* Core Flash Rules */
 .grid-box.hit-flash {
-    color: #fff !important; /* Keeps the text white during the blast */
-    transition: none !important; /* Snaps in instantly at 0ms */
+    color: #fff !important; 
+    border-radius: 24px !important; 
+    transition: none !important; 
 }
 
 /* 1. Top Left Flash & Press (Cyan) */
 #box-top-left.hit-flash {
     background-color: #00f2fe !important;
     box-shadow: 0 0 50px #00f2fe !important;
+    border-color: #00f2fe !important;
 }
 #box-top-left.active-press {
     background: rgba(0, 242, 254, 0.15);
@@ -183,6 +202,7 @@ body::before {
 #box-top-right.hit-flash {
     background-color: #ff2e7e !important;
     box-shadow: 0 0 50px #ff2e7e !important;
+    border-color: #ff2e7e !important;
 }
 #box-top-right.active-press {
     background: rgba(255, 46, 126, 0.15);
@@ -196,6 +216,7 @@ body::before {
 #box-bottom-left.hit-flash {
     background-color: #ba49ff !important;
     box-shadow: 0 0 50px #ba49ff !important;
+    border-color: #ba49ff !important;
 }
 #box-bottom-left.active-press {
     background: rgba(186, 73, 255, 0.15);
@@ -209,48 +230,8 @@ body::before {
 #box-bottom-right.hit-flash {
     background-color: #00ff88 !important;
     box-shadow: 0 0 50px #00ff88 !important;
+    border-color: #00ff88 !important;
 }
-#box-bottom-right.active-press {
-    background: rgba(0, 255, 136, 0.15);
-    border-color: #00ff88;
-    color: #00ff88;
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.4), inset 0 0 15px rgba(0, 255, 136, 0.2);
-    transform: scale(0.96);
-}
-
-/* Blinding Arcade Flash Effect (0ms peak hit visualization) */
-.grid-box.hit-flash {
-    background-color: currentColor !important;
-    box-shadow: 0 0 50px currentColor !important;
-    color: #fff !important;
-    transition: none !important;
-}
-
-/* Neon Custom Glow Overlays for Keypresses */
-#box-top-left.active-press {
-    background: rgba(0, 242, 254, 0.15);
-    border-color: #00f2fe;
-    color: #00f2fe;
-    box-shadow: 0 0 30px rgba(0, 242, 254, 0.4), inset 0 0 15px rgba(0, 242, 254, 0.2);
-    transform: scale(0.96);
-}
-
-#box-top-right.active-press {
-    background: rgba(255, 46, 126, 0.15);
-    border-color: #ff2e7e;
-    color: #ff2e7e;
-    box-shadow: 0 0 30px rgba(255, 46, 126, 0.4), inset 0 0 15px rgba(255, 46, 126, 0.2);
-    transform: scale(0.96);
-}
-
-#box-bottom-left.active-press {
-    background: rgba(186, 73, 255, 0.15);
-    border-color: #ba49ff;
-    color: #ba49ff;
-    box-shadow: 0 0 30px rgba(186, 73, 255, 0.4), inset 0 0 15px rgba(186, 73, 255, 0.2);
-    transform: scale(0.96);
-}
-
 #box-bottom-right.active-press {
     background: rgba(0, 255, 136, 0.15);
     border-color: #00ff88;
