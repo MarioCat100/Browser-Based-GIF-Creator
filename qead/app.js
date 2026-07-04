@@ -9,6 +9,7 @@ const uploadZone = document.getElementById('uploadZone');
 const resultsOverlay = document.getElementById('resultsOverlay');
 const retryBtn = document.getElementById('retryBtn') || document.getElementById('playAgainBtn');
 const homeBtn = document.getElementById('homeBtn');
+const toggleBgBtn = document.getElementById('toggleBgBtn'); // NEW BUTTON LOOKUP
 
 let isPaused = false;
 let currentCombo = 0;
@@ -17,6 +18,10 @@ let nextNoteIndex = 0;
 let gameAudio = null;
 let mapLoaded = false;
 let cachedRawNotes = []; 
+let currentBgURL = ""; // Tracks the active object URL to clean up memory leaks
+
+// NEW: Tracks if artwork should display (defaults to true if not set)
+let showArtwork = localStorage.getItem('showArtwork') !== 'false';
 
 // Performance Counters Matrix
 const scoreStats = {
@@ -41,6 +46,11 @@ const getActiveKeyMap = () => ({
     [userSettings.bottomRight]: { element: document.getElementById('box-bottom-right'), color: '#00ff88' }
 });
 
+// Initialize the button text on load
+if (toggleBgBtn) {
+    toggleBgBtn.innerText = showArtwork ? "ARTWORK: ON" : "ARTWORK: OFF";
+}
+
 function togglePause() {
     if (!mapLoaded || resultsOverlay.style.display === 'flex') return;
     isPaused = !isPaused;
@@ -64,12 +74,14 @@ function updateLiveAccuracy() {
     liveAccuracyDisplay.innerText = `${currentAccuracy.toFixed(2)}%`;
 }
 
-// --- .osu File Parsing Matrix with VISUAL STREAM LINK TAGGING ---
+// --- .osu File Parsing Matrix with BACKGROUND ARTWORK EXTRACTION ---
 function parseOsuFile(rawText) {
     const lines = rawText.split('\n');
     let isHitObjectsSection = false;
+    let isEventsSection = false;
     let rawNotes = [];
     let cleanTitle = "UNKNOWN MAP";
+    let bgFilename = "";
 
     lines.forEach(line => {
         line = line.trim();
@@ -80,9 +92,23 @@ function parseOsuFile(rawText) {
             songTitleDisplay.innerText = `qead // ${cleanTitle.toUpperCase()}`;
         }
         
+        if (line === '[Events]') {
+            isEventsSection = true;
+            isHitObjectsSection = false;
+            return;
+        }
+
         if (line === '[HitObjects]') {
             isHitObjectsSection = true;
+            isEventsSection = false;
             return;
+        }
+
+        if (isEventsSection) {
+            const parts = line.split(',');
+            if (parts[0] === '0' && parts[1] === '0' && parts[2]) {
+                bgFilename = parts[2].replace(/"/g, '').trim();
+            }
         }
 
         if (isHitObjectsSection) {
@@ -118,7 +144,7 @@ function parseOsuFile(rawText) {
 
     cachedRawNotes = JSON.stringify(rawNotes);
 
-    return { notes: rawNotes, title: cleanTitle };
+    return { notes: rawNotes, title: cleanTitle, bgFilename: bgFilename };
 }
 
 function startGameLoop(parsedNotes) {
@@ -189,7 +215,7 @@ function updateEngineClock() {
             note.flashed = true;
         }
 
-        const missBoundary = note.isSpamDensity ? 180 : 150;
+        const missBoundary = note.isSpamDensity ? 250 : 180;
 
         if (currentPlaybackTime > note.time + missBoundary && !note.hit && !note.missed) {
             note.missed = true;
@@ -349,8 +375,36 @@ function handleReturnToHome() {
     liveAccuracyDisplay.style.display = 'none';
     resultsOverlay.style.display = 'none';
 
+    // Clear background and clean up image memory leaks
+    document.body.style.backgroundImage = "";
+    if (currentBgURL) {
+        URL.revokeObjectURL(currentBgURL);
+        currentBgURL = "";
+    }
+
     folderInput.value = "";
     uploadZone.style.display = 'flex';
+}
+
+// NEW: Function to dynamically change the layout background based on setting state
+function refreshBackgroundView() {
+    if (showArtwork && currentBgURL) {
+        document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url(${currentBgURL})`;
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundPosition = "center";
+    } else {
+        document.body.style.backgroundImage = "";
+    }
+}
+
+// NEW: Click event listener for the live toggle button
+if (toggleBgBtn) {
+    toggleBgBtn.addEventListener('click', () => {
+        showArtwork = !showArtwork;
+        localStorage.setItem('showArtwork', showArtwork);
+        toggleBgBtn.innerText = showArtwork ? "ARTWORK: ON" : "ARTWORK: OFF";
+        refreshBackgroundView();
+    });
 }
 
 folderInput.addEventListener('change', async (e) => {
@@ -367,6 +421,15 @@ folderInput.addEventListener('change', async (e) => {
 
     const rawDataProfile = parseOsuFile(await osuFile.text());
     document.getElementById('resSongTitle').innerText = rawDataProfile.title;
+
+    // Build the background asset reference link
+    if (rawDataProfile.bgFilename) {
+        const matchImageFile = files.find(f => f.name.toLowerCase().endsWith(rawDataProfile.bgFilename.toLowerCase()));
+        if (matchImageFile) {
+            currentBgURL = URL.createObjectURL(matchImageFile);
+            refreshBackgroundView(); // Let our new display machine process it
+        }
+    }
 
     const audioURL = URL.createObjectURL(audioFile);
     gameAudio = new Audio(audioURL);
