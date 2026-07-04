@@ -145,19 +145,34 @@ body::before {
     100% { transform: scale(1); }
 }
 
-/* The 2x2 Glassmorphic Grid */
+/* Arena Alignment Frame Wrapper */
+.arena-wrapper {
+    position: relative;
+    width: 85vw;
+    max-width: 440px;
+    aspect-ratio: 1 / 1;
+}
+
+/* Hidden canvas layer for future drawing or clean fallback */
+#gameCanvas {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* The 2x2 Target Grid */
 .rhythm-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(2, 1fr);
-    width: 85vw;
-    max-width: 440px;
-    aspect-ratio: 1 / 1;
+    width: 100%;
+    height: 100%;
     gap: 25px;
 }
 
 .grid-box {
-    background: rgba(255, 255, 255, 0.01);
+    background: rgba(255, 255, 255, 0.02);
     border: 2px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(8px);
     border-radius: 24px;
@@ -173,44 +188,48 @@ body::before {
     box-shadow: inset 0 0 15px rgba(255,255,255,0.01);
 }
 
-/* Dynamic Shrinking Approach Rings */
-.approach-ring {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border: 2px solid currentColor;
-    border-radius: 24px;
-    pointer-events: none;
-    opacity: 0.8;
-    transform: scale(2.2); /* Starts out massive */
-    transition: transform 400ms linear, opacity 400ms linear; /* Perfectly syncs with the 400ms window */
-}
-
 /* =======================================================
-   FIXED FLASH MATRIX (Color-Matched Peak Blasts)
+   THE PERFECT SQUARE PULSE RING DESIGN
    ======================================================= */
-
-.grid-box.hit-flash {
-    color: #fff !important; 
-    border-radius: 24px !important; 
-    transition: none !important; 
+.note-pulse {
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px; /* Lines up exactly with border layout */
+    border: 3px solid currentColor;
+    border-radius: 24px; /* Matches your premium corner radius precisely */
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(1.6); /* Starts large outside the box */
+    animation: shrinkPulse 400ms linear forwards; /* Perfectly matches the 400ms speed window */
 }
 
-/* 1. Top Left (Cyan) */
-#box-top-left.hit-flash { background-color: #00f2fe !important; box-shadow: 0 0 50px #00f2fe !important; border-color: #00f2fe !important; }
-#box-top-left.active-press { background: rgba(0, 242, 254, 0.15); border-color: #00f2fe; color: #00f2fe; box-shadow: 0 0 30px rgba(0, 242, 254, 0.4), inset 0 0 15px rgba(0, 242, 254, 0.2); transform: scale(0.96); }
+@keyframes shrinkPulse {
+    0% { transform: scale(1.6); opacity: 0; }
+    20% { opacity: 0.8; }
+    100% { transform: scale(1.0); opacity: 1; }
+}
 
-/* 2. Top Right (Magenta) */
-#box-top-right.hit-flash { background-color: #ff2e7e !important; box-shadow: 0 0 50px #ff2e7e !important; border-color: #ff2e7e !important; }
-#box-top-right.active-press { background: rgba(255, 46, 126, 0.15); border-color: #ff2e7e; color: #ff2e7e; box-shadow: 0 0 30px rgba(255, 46, 126, 0.4), inset 0 0 15px rgba(255, 46, 126, 0.2); transform: scale(0.96); }
+/* Active Hit Flash State */
+.grid-box.hit-flash {
+    color: #fff !important;
+    border-radius: 24px !important;
+    transition: none !important;
+}
 
-/* 3. Bottom Left (Purple) */
-#box-bottom-left.hit-flash { background-color: #ba49ff !important; box-shadow: 0 0 50px #ba49ff !important; border-color: #ba49ff !important; }
-#box-bottom-left.active-press { background: rgba(186, 73, 255, 0.15); border-color: #ba49ff; color: #ba49ff; box-shadow: 0 0 30px rgba(186, 73, 255, 0.4), inset 0 0 15px rgba(186, 73, 255, 0.2); transform: scale(0.96); }
+/* 1. Top Left Input Matrix (Cyan) */
+#box-top-left.hit-flash { background-color: #00f2fe !important; box-shadow: 0 0 40px #00f2fe !important; border-color: #00f2fe !important; }
+#box-top-left.active-press { border-color: #00f2fe; color: #00f2fe; transform: scale(0.96); }
 
-/* 4. Bottom Right (Green) */
-#box-bottom-right.hit-flash { background-color: #00ff88 !important; box-shadow: 0 0 50px #00ff88 !important; border-color: #00ff88 !important; }
-#box-bottom-right.active-press { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; box-shadow: 0 0 30px rgba(0, 255, 136, 0.4), inset 0 0 15px rgba(0, 255, 136, 0.2); transform: scale(0.96); }
+/* 2. Top Right Input Matrix (Magenta) */
+#box-top-right.hit-flash { background-color: #ff2e7e !important; box-shadow: 0 0 40px #ff2e7e !important; border-color: #ff2e7e !important; }
+#box-top-right.active-press { border-color: #ff2e7e; color: #ff2e7e; transform: scale(0.96); }
+
+/* 3. Bottom Left Input Matrix (Purple) */
+#box-bottom-left.hit-flash { background-color: #ba49ff !important; box-shadow: 0 0 40px #ba49ff !important; border-color: #ba49ff !important; }
+#box-bottom-left.active-press { border-color: #ba49ff; color: #ba49ff; transform: scale(0.96); }
+
+/* 4. Bottom Right Input Matrix (Green) */
+#box-bottom-right.hit-flash { background-color: #00ff88 !important; box-shadow: 0 0 40px #00ff88 !important; border-color: #00ff88 !important; }
+#box-bottom-right.active-press { border-color: #00ff88; color: #00ff88; transform: scale(0.96); }
 
 /* Floating Combo Burst Text */
 .judgment-burst {
@@ -229,7 +248,7 @@ body::before {
     100% { transform: translateY(-40px) scale(1); opacity: 0; }
 }
 
-/* Pause Screen Matrix */
+/* Pause Screen Overlay */
 .pause-overlay {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -242,40 +261,11 @@ body::before {
     z-index: 100;
 }
 
-.pause-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    width: 300px;
-}
-
-.menu-title {
-    font-size: 2.5rem;
-    font-weight: 900;
-    font-style: italic;
-    letter-spacing: 2px;
-    text-align: center;
-    margin-bottom: 20px;
-    background: linear-gradient(45deg, #ff2e7e, #ba49ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.menu-btn {
-    padding: 16px;
-    font-size: 1.1rem;
-    font-weight: 800;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    color: #fff;
-    letter-spacing: 1px;
-    transition: transform 0.1s, filter 0.2s;
-}
-
+.pause-menu { display: flex; flex-direction: column; gap: 18px; width: 300px; }
+.menu-title { font-size: 2.5rem; font-weight: 900; font-style: italic; letter-spacing: 2px; text-align: center; margin-bottom: 20px; background: linear-gradient(45deg, #ff2e7e, #ba49ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.menu-btn { padding: 16px; font-size: 1.1rem; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; color: #fff; letter-spacing: 1px; transition: transform 0.1s, filter 0.2s; }
 .btn-continue { background: linear-gradient(135deg, #238636, #2ea44f); }
 .btn-retry { background: linear-gradient(135deg, #1f6feb, #388bfd); }
 .btn-quit { background: linear-gradient(135deg, #da3637, #f85149); }
-
 .menu-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
 .menu-btn:active { transform: translateY(0); }
