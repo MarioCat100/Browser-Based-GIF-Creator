@@ -337,7 +337,7 @@
         let nextNoteIndex = 0;
         let gameAudio = null;
 
-        // Custom Layout Settings (Matches your preferred setup!)
+        // Custom Layout Settings
         const userSettings = {
             topLeft: 'q',
             topRight: 'e',
@@ -360,26 +360,6 @@
                 if (isPaused) gameAudio.pause();
                 else gameAudio.play();
             }
-        }
-
-        // Simulates an arcade particle burst and increments combo indicator
-        function handleHitRegistration(element, color) {
-            if (!element) return;
-
-            currentCombo++;
-            comboDisplay.innerText = `${currentCombo}x`;
-            comboDisplay.style.display = 'block';
-            comboDisplay.classList.remove('bump');
-            void comboDisplay.offsetWidth; // Force reflow
-            comboDisplay.classList.add('bump');
-
-            const burst = document.createElement('div');
-            burst.className = 'judgment-burst';
-            burst.innerText = '300';
-            burst.style.color = color;
-            
-            element.appendChild(burst);
-            setTimeout(() => burst.remove(), 400);
         }
 
         // --- .osu File Parsing Matrix ---
@@ -408,21 +388,20 @@
                         const y = parseInt(parts[1]);
                         const time = parseInt(parts[2]);
 
-                        // 2x2 Quadrant conversion math
                         let targetId = '';
                         if (x < 256 && y < 192) targetId = 'box-top-left';
                         else if (x >= 256 && y < 192) targetId = 'box-top-right';
                         else if (x < 256 && y >= 192) targetId = 'box-bottom-left';
                         else targetId = 'box-bottom-right';
 
-                        notes.push({ time, targetId, visualTriggered: false });
+                        notes.push({ time, targetId, visualTriggered: false, hit: false, missed: false });
                     }
                 }
             });
             return notes.sort((a, b) => a.time - b.time);
         }
 
-        // --- Engine Frame Loop ---
+        // --- Engine Frame Loop (With Miss Detection & Bright Pre-Glow) ---
         function startGameLoop(parsedNotes) {
             activeTimeline = parsedNotes;
             nextNoteIndex = 0;
@@ -438,27 +417,89 @@
 
             const currentPlaybackTime = gameAudio.currentTime * 1000;
 
-            while (nextNoteIndex < activeTimeline.length) {
-                const note = activeTimeline[nextNoteIndex];
-                
-                // 400ms anticipation visual alert
-                if (currentPlaybackTime >= note.time - 400 && !note.visualTriggered) {
+            for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
+                const note = activeTimeline[i];
+
+                // 1. Bright Visual Pre-Glow
+                if (currentPlaybackTime >= note.time - 400 && currentPlaybackTime < note.time && !note.visualTriggered) {
                     const el = document.getElementById(note.targetId);
-                    el.style.transition = 'border-color 0.4s ease-out';
-                    el.style.borderColor = 'rgba(255,255,255,0.7)';
+                    el.style.transition = 'background-color 0.4s ease-out, border-color 0.4s ease-out';
+                    el.style.backgroundColor = 'rgba(255, 255, 255, 0.08)'; 
+                    el.style.borderColor = 'rgba(255, 255, 255, 0.9)';      
                     note.visualTriggered = true;
                 }
 
-                // Hit target timeline alignment
-                if (currentPlaybackTime >= note.time) {
+                // 2. Strict Miss Window Check
+                if (currentPlaybackTime > note.time + 150 && !note.hit && !note.missed) {
+                    note.missed = true;
+                    
+                    currentCombo = 0;
+                    comboDisplay.innerText = `${currentCombo}x`;
+                    
                     const el = document.getElementById(note.targetId);
-                    el.style.borderColor = ''; // reset border layout
-                    nextNoteIndex++;
-                } else {
-                    break;
+                    el.style.transition = 'none';
+                    el.style.borderColor = '#da3637';
+                    setTimeout(() => { el.style.borderColor = ''; el.style.backgroundColor = ''; }, 100);
+
+                    triggerJudgmentBurst(el, 'X', '#da3637');
+                    nextNoteIndex = i + 1;
                 }
             }
             requestAnimationFrame(updateEngineClock);
+        }
+
+        // --- Updated Hit Registration (Checks Timing Accuracy) ---
+        function handleInputHit(targetId) {
+            if (!gameAudio) return;
+            const currentPlaybackTime = gameAudio.currentTime * 1000;
+            const keyMap = getActiveKeyMap();
+            let match = Object.values(keyMap).find(item => item.element.id === targetId);
+
+            const hitWindow = 150; 
+            const targetNote = activeTimeline.find(note => 
+                note.targetId === targetId && 
+                !note.hit && 
+                !note.missed &&
+                Math.abs(currentPlaybackTime - note.time) <= hitWindow
+            );
+
+            if (targetNote) {
+                targetNote.hit = true;
+                
+                const offset = Math.abs(currentPlaybackTime - targetNote.time);
+                let scoreType = '300';
+                
+                if (offset <= 40) {
+                    scoreType = '300';
+                } else if (offset <= 80) {
+                    scoreType = '100';
+                } else {
+                    scoreType = '50';
+                }
+
+                currentCombo++;
+                comboDisplay.innerText = `${currentCombo}x`;
+                comboDisplay.style.display = 'block';
+                comboDisplay.classList.remove('bump');
+                void comboDisplay.offsetWidth; 
+                comboDisplay.classList.add('bump');
+
+                triggerJudgmentBurst(match.element, scoreType, match.color);
+                
+                match.element.style.transition = 'none';
+                match.element.style.borderColor = '';
+                match.element.style.backgroundColor = '';
+            }
+        }
+
+        function triggerJudgmentBurst(element, text, color) {
+            if (!element) return;
+            const burst = document.createElement('div');
+            burst.className = 'judgment-burst';
+            burst.innerText = text;
+            burst.style.color = color;
+            element.appendChild(burst);
+            setTimeout(() => burst.remove(), 400);
         }
 
         // --- File Load Listener ---
@@ -497,7 +538,7 @@
             if (keyMap[key] && !isPaused && !e.repeat) {
                 const item = keyMap[key];
                 item.element.classList.add('active-press');
-                handleHitRegistration(item.element, item.color);
+                handleInputHit(item.element.id);
             }
         });
 
@@ -516,7 +557,7 @@
                 e.preventDefault();
                 if (isPaused) return;
                 item.element.classList.add('active-press');
-                handleHitRegistration(item.element, item.color);
+                handleInputHit(item.element.id);
             };
 
             const endPress = () => item.element.classList.remove('active-press');
