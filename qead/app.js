@@ -95,12 +95,26 @@ function updateEngineClock() {
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
 
-        // 1. Clean Line Pre-Glow (Keeps inside completely clear)
+        // 1. Spawns the Shrinking Approach Ring (400ms warning window)
         if (currentPlaybackTime >= note.time - 400 && currentPlaybackTime < note.time && !note.visualTriggered) {
             const el = document.getElementById(note.targetId);
-            el.style.transition = 'border-color 0.3s ease-out';
-            el.style.backgroundColor = 'transparent'; 
-            el.style.borderColor = 'rgba(255, 255, 255, 0.8)'; // Bright warning frame 
+            const keyMap = getActiveKeyMap();
+            const matchingKeyData = Object.values(keyMap).find(item => item.element.id === note.targetId);
+            
+            // Generate the dynamic approach ring DOM element
+            const ring = document.createElement('div');
+            ring.className = 'approach-ring';
+            ring.style.color = matchingKeyData.color; // Color-match to the quadrant
+            el.appendChild(ring);
+            
+            // Force reflow and trigger the linear shrink animation down to scale(1)
+            setTimeout(() => {
+                ring.style.transform = 'scale(1)';
+                ring.style.opacity = '1';
+            }, 10);
+            
+            // Store reference to clean it up later if player hits/misses
+            note.ringElement = ring;
             note.visualTriggered = true;
         }
 
@@ -108,7 +122,11 @@ function updateEngineClock() {
         if (currentPlaybackTime >= note.time && !note.flashed) {
             const el = document.getElementById(note.targetId);
             
-            // Wipe the warning border instantly right as the color burst takes over
+            // Remove the ring element instantly upon zero alignment
+            if (note.ringElement) {
+                note.ringElement.remove();
+            }
+
             el.style.backgroundColor = '';
             el.style.borderColor = '';
             
@@ -122,6 +140,8 @@ function updateEngineClock() {
         // 2. Strict Miss Window Check (150ms trailing deadline)
         if (currentPlaybackTime > note.time + 150 && !note.hit && !note.missed) {
             note.missed = true;
+            
+            if (note.ringElement) note.ringElement.remove();
             
             currentCombo = 0;
             comboDisplay.innerText = `${currentCombo}x`;
@@ -156,6 +176,11 @@ function handleInputHit(targetId) {
     if (targetNote) {
         targetNote.hit = true;
         
+        // Remove approach ring instantly on active click registration
+        if (targetNote.ringElement) {
+            targetNote.ringElement.remove();
+        }
+
         const offset = Math.abs(currentPlaybackTime - targetNote.time);
         let scoreType = '300';
         let burstColor = match.color;
