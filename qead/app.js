@@ -7,6 +7,8 @@ const songTitleDisplay = document.getElementById('songTitle');
 const folderInput = document.getElementById('folderInput');
 const uploadZone = document.getElementById('uploadZone');
 const resultsOverlay = document.getElementById('resultsOverlay');
+const retryBtn = document.getElementById('retryBtn') || document.getElementById('playAgainBtn');
+const homeBtn = document.getElementById('homeBtn');
 
 let isPaused = false;
 let currentCombo = 0;
@@ -14,6 +16,7 @@ let activeTimeline = [];
 let nextNoteIndex = 0;
 let gameAudio = null;
 let mapLoaded = false;
+let cachedRawNotes = []; 
 
 // Performance Counters Matrix
 const scoreStats = {
@@ -48,7 +51,6 @@ function togglePause() {
     }
 }
 
-// --- Dynamic Real-Time Accuracy Math Recalculator ---
 function updateLiveAccuracy() {
     const totalProcessed = scoreStats.count300 + scoreStats.count100 + scoreStats.count50 + scoreStats.countMiss;
     if (totalProcessed === 0) {
@@ -62,11 +64,11 @@ function updateLiveAccuracy() {
     liveAccuracyDisplay.innerText = `${currentAccuracy.toFixed(2)}%`;
 }
 
-// --- .osu File Parsing Matrix ---
+// --- .osu File Parsing Matrix with VISUAL STREAM LINK TAGGING ---
 function parseOsuFile(rawText) {
     const lines = rawText.split('\n');
     let isHitObjectsSection = false;
-    const notes = [];
+    let rawNotes = [];
     let cleanTitle = "UNKNOWN MAP";
 
     lines.forEach(line => {
@@ -96,11 +98,27 @@ function parseOsuFile(rawText) {
                 else if (x < 256 && y >= 192) targetId = 'box-bottom-left';
                 else targetId = 'box-bottom-right';
 
-                notes.push({ time, targetId, visualTriggered: false, flashed: false, hit: false, missed: false });
+                rawNotes.push({ time, targetId, visualTriggered: false, flashed: false, hit: false, missed: false, isSpamDensity: false });
             }
         }
     });
-    return { notes: notes.sort((a, b) => a.time - b.time), title: cleanTitle };
+
+    rawNotes.sort((a, b) => a.time - b.time);
+
+    const densityThresholdMS = 150;
+    for (let i = 0; i < rawNotes.length; i++) {
+        const prev = rawNotes[i - 1];
+        const next = rawNotes[i + 1];
+        
+        if ((prev && (rawNotes[i].time - prev.time <= densityThresholdMS)) || 
+            (next && (next.time - rawNotes[i].time <= densityThresholdMS))) {
+            rawNotes[i].isSpamDensity = true;
+        }
+    }
+
+    cachedRawNotes = JSON.stringify(rawNotes);
+
+    return { notes: rawNotes, title: cleanTitle };
 }
 
 function startGameLoop(parsedNotes) {
@@ -120,10 +138,10 @@ function startGameLoop(parsedNotes) {
     liveAccuracyDisplay.style.display = 'block';
     
     mapLoaded = true;
+    isPaused = false;
     requestAnimationFrame(updateEngineClock);
 }
 
-// --- High-Speed Synchronization Engine Clock ---
 function updateEngineClock() {
     if (isPaused || !gameAudio) {
         requestAnimationFrame(updateEngineClock);
@@ -132,7 +150,6 @@ function updateEngineClock() {
 
     const currentPlaybackTime = gameAudio.currentTime * 1000;
 
-    // FOOLPROOF END TRIGGER fallback check
     const lastNote = activeTimeline[activeTimeline.length - 1];
     if (gameAudio.ended || (lastNote && currentPlaybackTime > lastNote.time + 1000)) {
         triggerResultsScreen();
@@ -149,7 +166,14 @@ function updateEngineClock() {
             
             const pulse = document.createElement('div');
             pulse.className = 'note-pulse';
-            pulse.style.color = matchingKeyData.color; 
+            
+            if (note.isSpamDensity) {
+                pulse.style.color = '#fff600'; 
+                pulse.style.boxShadow = '0 0 12px #ffffff, inset 0 0 12px #fff600';
+            } else {
+                pulse.style.color = matchingKeyData.color; 
+            }
+            
             el.appendChild(pulse);
             
             note.pulseElement = pulse;
@@ -165,8 +189,9 @@ function updateEngineClock() {
             note.flashed = true;
         }
 
-        // Miss Check Trail Boundary
-        if (currentPlaybackTime > note.time + 150 && !note.hit && !note.missed) {
+        const missBoundary = note.isSpamDensity ? 180 : 150;
+
+        if (currentPlaybackTime > note.time + missBoundary && !note.hit && !note.missed) {
             note.missed = true;
             if (note.pulseElement) note.pulseElement.remove();
             
@@ -187,20 +212,18 @@ function updateEngineClock() {
     requestAnimationFrame(updateEngineClock);
 }
 
-// --- High Precision Hit Registration ---
 function handleInputHit(targetId) {
     if (!gameAudio) return;
     const currentPlaybackTime = gameAudio.currentTime * 1000;
     const keyMap = getActiveKeyMap();
     let match = Object.values(keyMap).find(item => item.element.id === targetId);
 
-    const hitWindow = 150; 
-    const targetNote = activeTimeline.find(note => 
-        note.targetId === targetId && 
-        !note.hit && 
-        !note.missed &&
-        Math.abs(currentPlaybackTime - note.time) <= hitWindow
-    );
+    const targetNote = activeTimeline.find(note => {
+        if (note.targetId !== targetId || note.hit || note.missed) return false;
+        const offset = Math.abs(currentPlaybackTime - note.time);
+        const currentMaxWindow = note.isSpamDensity ? 180 : 150;
+        return offset <= currentMaxWindow;
+    });
 
     if (targetNote) {
         targetNote.hit = true;
@@ -210,10 +233,13 @@ function handleInputHit(targetId) {
         let scoreType = '300';
         let burstColor = match.color;
         
-        if (offset <= 50) {
+        const win300 = targetNote.isSpamDensity ? 75 : 50;
+        const win100 = targetNote.isSpamDensity ? 130 : 100;
+
+        if (offset <= win300) {
             scoreType = '300';
             scoreStats.count300++;
-        } else if (offset <= 100) {
+        } else if (offset <= win100) {
             scoreType = '100';
             scoreStats.count100++;
             burstColor = '#e1b12c'; 
@@ -250,7 +276,6 @@ function triggerJudgmentBurst(element, text, color) {
     setTimeout(() => burst.remove(), 400);
 }
 
-// --- Dynamic Scorecard Compiler ---
 function triggerResultsScreen() {
     isPaused = true;
     if (gameAudio) gameAudio.pause();
@@ -287,7 +312,47 @@ function triggerResultsScreen() {
     resultsOverlay.style.display = 'flex';
 }
 
-// --- Folder Load File Listener ---
+function handlePlayAgainRetry() {
+    if (!cachedRawNotes || !gameAudio) return;
+
+    document.querySelectorAll('.note-pulse').forEach(p => p.remove());
+    document.querySelectorAll('.judgment-burst').forEach(b => b.remove());
+    resultsOverlay.style.display = 'none';
+
+    gameAudio.currentTime = 0;
+    const freshTimelineCopy = JSON.parse(cachedRawNotes);
+
+    setTimeout(() => {
+        gameAudio.play();
+        startGameLoop(freshTimelineCopy);
+    }, 600);
+}
+
+function handleReturnToHome() {
+    if (gameAudio) {
+        gameAudio.pause();
+        gameAudio.src = "";
+        gameAudio = null;
+    }
+
+    document.querySelectorAll('.note-pulse').forEach(p => p.remove());
+    document.querySelectorAll('.judgment-burst').forEach(b => b.remove());
+
+    activeTimeline = [];
+    cachedRawNotes = [];
+    mapLoaded = false;
+    isPaused = false;
+
+    songTitleDisplay.innerText = "qead // CHOOSE A TRACK";
+
+    comboDisplay.style.display = 'none';
+    liveAccuracyDisplay.style.display = 'none';
+    resultsOverlay.style.display = 'none';
+
+    folderInput.value = "";
+    uploadZone.style.display = 'flex';
+}
+
 folderInput.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);
     const osuFile = files.find(f => f.name.endsWith('.osu'));
@@ -314,7 +379,6 @@ folderInput.addEventListener('change', async (e) => {
     }, { once: true });
 });
 
-// --- Input Event Handlers ---
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (e.key === 'Escape') { togglePause(); return; }
@@ -336,22 +400,46 @@ window.addEventListener('keyup', (e) => {
 const keyMap = getActiveKeyMap();
 Object.keys(keyMap).forEach(key => {
     const item = keyMap[key];
-    
-    const startPress = (e) => {
+    let activeTouches = new Set();
+
+    item.element.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        if (isPaused) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touchId = e.changedTouches[i].identifier;
+            if (!activeTouches.has(touchId)) {
+                activeTouches.add(touchId);
+                item.element.classList.add('active-press');
+                handleInputHit(item.element.id);
+            }
+        }
+    });
+
+    item.element.addEventListener('touchend', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            activeTouches.delete(e.changedTouches[i].identifier);
+        }
+        if (activeTouches.size === 0) {
+            item.element.classList.remove('active-press');
+        }
+    });
+
+    item.element.addEventListener('mousedown', (e) => {
         if (isPaused) return;
         item.element.classList.add('active-press');
         handleInputHit(item.element.id);
-    };
-
-    const endPress = () => item.element.classList.remove('active-press');
-
-    item.element.addEventListener('touchstart', startPress);
-    item.element.addEventListener('touchend', endPress);
-    item.element.addEventListener('mousedown', startPress);
-    item.element.addEventListener('mouseup', endPress);
-    item.element.addEventListener('mouseleave', endPress);
+    });
+    item.element.addEventListener('mouseup', () => item.element.classList.remove('active-press'));
+    item.element.addEventListener('mouseleave', () => item.element.classList.remove('active-press'));
 });
 
 pauseBtn.addEventListener('click', togglePause);
 resumeBtn.addEventListener('click', togglePause);
+
+if (retryBtn) {
+    retryBtn.addEventListener('click', handlePlayAgainRetry);
+}
+
+if (homeBtn) {
+    homeBtn.addEventListener('click', handleReturnToHome);
+}
