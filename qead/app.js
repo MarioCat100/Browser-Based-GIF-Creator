@@ -20,7 +20,7 @@ let mapLoaded = false;
 let cachedRawNotes = []; 
 let currentBgURL = ""; // Tracks the active object URL to clean up memory leaks
 
-// NEW: Tracks if artwork should display (defaults to true if not set)
+// NEW: Tracks if artwork should display (defaults to true if not set)222
 let showArtwork = localStorage.getItem('showArtwork') !== 'false';
 
 // Performance Counters Matrix
