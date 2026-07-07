@@ -17,16 +17,36 @@
     </header>
 
     <main class="game-container">
-        <div class="upload-zone" id="uploadZone">
-            <label class="upload-btn">
-                📂 LOAD OSU! MAP FOLDER
-                <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
-            </label>
-            <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">Select a local beatmap folder containing the .mp3 and .osu files</p>
+        
+        <div class="song-select-dashboard" id="songSelectScreen">
             
-            <button id="toggleBgBtn" class="upload-btn" style="margin-top: 20px; background: #222; border: 1px solid #444; font-size: 0.85rem;">ARTWORK: ON</button>
-        </div>
+            <div class="menu-preview-panel">
+                <div class="preview-art-frame">
+                    <div class="preview-art-blur" id="menuArtPreview"></div>
+                </div>
+                <h2 class="preview-title" id="menuSongTitle">SELECT A TRACK</h2>
+                <p class="preview-artist" id="menuSongArtist">Import a folder or pick a song</p>
+                
+                <button class="menu-play-btn" id="menuPlayBtn" style="display: none;">▶ PLAY</button>
+                
+                <label class="compact-upload-zone">
+                    📂 LOAD OSU! MAP FOLDER
+                    <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+                </label>
+                <p style="color: #666; font-size: 0.8rem; margin-top: 8px;">Select a local beatmap folder containing the .mp3 and .osu files</p>
+                
+                <button id="toggleBgBtn" class="compact-upload-zone" style="margin-top: 15px; background: #222; border: 1px solid #444; font-size: 0.85rem;">ARTWORK: ON</button>
+            </div>
 
+            <div style="flex: 1.2; display: flex; flex-direction: column; gap: 15px;">
+                
+                <input type="text" id="menuSearchInput" class="menu-search-bar" placeholder="🔍 Type to search tracks (e.g. Brain, xi)..." autocomplete="off">
+                
+                <div class="song-wheel" id="songWheelList">
+                    </div>
+            </div>
+            
+        </div>
         <div class="live-accuracy-hud" id="liveAccuracyDisplay">100.00%</div>
         <div class="live-combo-hud" id="comboDisplay">000x</div>
 
@@ -35,7 +55,8 @@
                 <span id="progressPercent">0%</span>
             </div>
         </div>
-        <div class="arena-wrapper">
+
+        <div class="arena-wrapper" id="gameArena" style="display: none;">
             <canvas id="gameCanvas"></canvas>
 
             <div class="rhythm-grid">
