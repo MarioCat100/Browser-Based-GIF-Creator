@@ -9,7 +9,7 @@ const uploadZone = document.getElementById('uploadZone');
 const resultsOverlay = document.getElementById('resultsOverlay');
 const retryBtn = document.getElementById('retryBtn') || document.getElementById('playAgainBtn');
 const homeBtn = document.getElementById('homeBtn');
-const toggleBgBtn = document.getElementById('toggleBgBtn'); // NEW BUTTON LOOKUP
+const toggleBgBtn = document.getElementById('toggleBgBtn'); 
 
 let isPaused = false;
 let currentCombo = 0;
@@ -18,12 +18,13 @@ let nextNoteIndex = 0;
 let gameAudio = null;
 let mapLoaded = false;
 let cachedRawNotes = []; 
-let currentBgURL = ""; // Tracks the active object URL to clean up memory leaks
+let currentBgURL = ""; 
 
-// NEW: Tracks if artwork should display (defaults to true if not set)
+// Optimized: Track the last rendered percentage to prevent redundant DOM painting redraws
+let lastRenderedPercent = -1;
+
 let showArtwork = localStorage.getItem('showArtwork') !== 'false';
 
-// Performance Counters Matrix
 const scoreStats = {
     count300: 0,
     count100: 0,
@@ -46,7 +47,24 @@ const getActiveKeyMap = () => ({
     [userSettings.bottomRight]: { element: document.getElementById('box-bottom-right'), color: '#00ff88' }
 });
 
-// Initialize the button text on load
+const hitSoundFile = new Audio('soft-hitnormal.wav'); 
+hitSoundFile.preload = 'auto';
+
+function playHitSound() {
+    const soundClone = hitSoundFile.cloneNode();
+    soundClone.volume = 0.5;
+    soundClone.play().catch(err => console.log("Audio block context: ", err));
+}
+
+const missSoundFile = new Audio('combobreak.mp3'); 
+missSoundFile.preload = 'auto';
+
+function playMissSound() {
+    const soundClone = missSoundFile.cloneNode();
+    soundClone.volume = 0.6; 
+    soundClone.play().catch(err => console.log("Miss audio block context: ", err));
+}
+
 if (toggleBgBtn) {
     toggleBgBtn.innerText = showArtwork ? "ARTWORK: ON" : "ARTWORK: OFF";
 }
@@ -74,7 +92,6 @@ function updateLiveAccuracy() {
     liveAccuracyDisplay.innerText = `${currentAccuracy.toFixed(2)}%`;
 }
 
-// --- .osu File Parsing Matrix with BACKGROUND ARTWORK EXTRACTION ---
 function parseOsuFile(rawText) {
     const lines = rawText.split('\n');
     let isHitObjectsSection = false;
@@ -163,12 +180,14 @@ function startGameLoop(parsedNotes) {
     liveAccuracyDisplay.innerText = "100.00%";
     liveAccuracyDisplay.style.display = 'block';
     
+    lastRenderedPercent = -1; // Reset tracker
+    
     mapLoaded = true;
     isPaused = false;
     requestAnimationFrame(updateEngineClock);
 }
 
-// Calculates song completion percentage and handles the radial layout math
+// OPTIMIZED: Now only touches the DOM style tree when an actual whole integer percentage changes!
 function updateOsuProgressCircle() {
     if (!gameAudio || isPaused) return;
 
@@ -178,12 +197,15 @@ function updateOsuProgressCircle() {
 
     const progressPercent = Math.floor((currentSeconds / totalSeconds) * 100);
     
+    // GUARD RAIL: If the percentage is exactly the same as last frame, skip painting entirely
+    if (progressPercent === lastRenderedPercent) return;
+    lastRenderedPercent = progressPercent;
+
     const percentLabel = document.getElementById('progressPercent');
     if (percentLabel) percentLabel.innerText = `${progressPercent}%`;
 
     const circleElement = document.getElementById('progressCircle');
     if (circleElement) {
-        // Spins the neon cyan fill clockwise based on the completion accuracy math
         circleElement.style.background = `conic-gradient(#00f2fe ${progressPercent}%, #222 ${progressPercent}%)`;
     }
 }
@@ -195,10 +217,8 @@ function updateEngineClock() {
     }
 
     const currentPlaybackTime = gameAudio.currentTime * 1000;
-
     const lastNote = activeTimeline[activeTimeline.length - 1];
     
-    // FIXED OUTRO: PRIMARY check lets audio finish smoothly right to the final frame
     const trackFinishedNaturally = gameAudio.ended;
     const safetyBufferReached = lastNote && (currentPlaybackTime > lastNote.time + 4000);
 
@@ -207,7 +227,6 @@ function updateEngineClock() {
         return;
     }
 
-    // Live update the progress tracker dial every animation clock refresh frame
     updateOsuProgressCircle();
 
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
@@ -249,6 +268,10 @@ function updateEngineClock() {
             note.missed = true;
             if (note.pulseElement) note.pulseElement.remove();
             
+            if (currentCombo >= 5) {
+                playMissSound();
+            }
+
             scoreStats.countMiss++;
             currentCombo = 0;
             comboDisplay.innerText = `${currentCombo}x`;
@@ -376,9 +399,10 @@ function handlePlayAgainRetry() {
     gameAudio.currentTime = 0;
     const freshTimelineCopy = JSON.parse(cachedRawNotes);
 
-    // FIXED RETRY POSITIONING: Turn progress circle back on immediately when retrying
     const circleElement = document.getElementById('progressCircle');
     if (circleElement) circleElement.style.display = 'flex';
+    
+    lastRenderedPercent = -1; 
 
     setTimeout(() => {
         gameAudio.play();
@@ -407,27 +431,24 @@ function handleReturnToHome() {
     liveAccuracyDisplay.style.display = 'none';
     resultsOverlay.style.display = 'none';
 
-    // Clear background and clean up image memory leaks
     document.body.style.backgroundImage = "";
     if (currentBgURL) {
         URL.revokeObjectURL(currentBgURL);
         currentBgURL = "";
     }
 
-    // RESET METRICS: Restores progress radial ring properties and HIDES IT when heading back home
     const percentLabel = document.getElementById('progressPercent');
     if (percentLabel) percentLabel.innerText = "0%";
     const circleElement = document.getElementById('progressCircle');
     if (circleElement) {
         circleElement.style.background = `conic-gradient(#00f2fe 0%, #222 0%)`;
-        circleElement.style.display = 'none'; // Lock back to hidden state
+        circleElement.style.display = 'none';
     }
 
     folderInput.value = "";
     uploadZone.style.display = 'flex';
 }
 
-// Function to dynamically change the layout background based on setting state
 function refreshBackgroundView() {
     if (showArtwork && currentBgURL) {
         document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url(${currentBgURL})`;
@@ -438,7 +459,6 @@ function refreshBackgroundView() {
     }
 }
 
-// Click event listener for the live toggle button
 if (toggleBgBtn) {
     toggleBgBtn.addEventListener('click', () => {
         showArtwork = !showArtwork;
@@ -463,12 +483,11 @@ folderInput.addEventListener('change', async (e) => {
     const rawDataProfile = parseOsuFile(await osuFile.text());
     document.getElementById('resSongTitle').innerText = rawDataProfile.title;
 
-    // Build the background asset reference link
     if (rawDataProfile.bgFilename) {
         const matchImageFile = files.find(f => f.name.toLowerCase().endsWith(rawDataProfile.bgFilename.toLowerCase()));
         if (matchImageFile) {
             currentBgURL = URL.createObjectURL(matchImageFile);
-            refreshBackgroundView(); // Let our new display machine process it
+            refreshBackgroundView(); 
         }
     }
 
@@ -476,10 +495,10 @@ folderInput.addEventListener('change', async (e) => {
     gameAudio = new Audio(audioURL);
 
     gameAudio.addEventListener('canplaythrough', () => {
-        // FIXED START DISPLAY: Make the progress circle appear IMMEDIATELY when the folder loads
-        // This ensures it is visible during the 3-second ready countdown buffer!
         const circleElement = document.getElementById('progressCircle');
         if (circleElement) circleElement.style.display = 'flex';
+
+        lastRenderedPercent = -1;
 
         setTimeout(() => {
             gameAudio.play();
