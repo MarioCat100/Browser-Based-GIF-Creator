@@ -376,7 +376,10 @@ function handlePlayAgainRetry() {
     gameAudio.currentTime = 0;
     const freshTimelineCopy = JSON.parse(cachedRawNotes);
 
-    // FIXED RETRY: Adds the same 3-second lead-in buffer when you restart a map
+    // FIXED RETRY POSITIONING: Turn progress circle back on immediately when retrying
+    const circleElement = document.getElementById('progressCircle');
+    if (circleElement) circleElement.style.display = 'flex';
+
     setTimeout(() => {
         gameAudio.play();
         startGameLoop(freshTimelineCopy);
@@ -411,11 +414,14 @@ function handleReturnToHome() {
         currentBgURL = "";
     }
 
-    // RESET METRICS: Restores progress radial ring properties when heading back home
+    // RESET METRICS: Restores progress radial ring properties and HIDES IT when heading back home
     const percentLabel = document.getElementById('progressPercent');
     if (percentLabel) percentLabel.innerText = "0%";
     const circleElement = document.getElementById('progressCircle');
-    if (circleElement) circleElement.style.background = `conic-gradient(#00f2fe 0%, #222 0%)`;
+    if (circleElement) {
+        circleElement.style.background = `conic-gradient(#00f2fe 0%, #222 0%)`;
+        circleElement.style.display = 'none'; // Lock back to hidden state
+    }
 
     folderInput.value = "";
     uploadZone.style.display = 'flex';
@@ -470,7 +476,11 @@ folderInput.addEventListener('change', async (e) => {
     gameAudio = new Audio(audioURL);
 
     gameAudio.addEventListener('canplaythrough', () => {
-        // FIXED START: Increased delay from 1000ms to 3000ms for a proper osu!-style ready buffer
+        // FIXED START DISPLAY: Make the progress circle appear IMMEDIATELY when the folder loads
+        // This ensures it is visible during the 3-second ready countdown buffer!
+        const circleElement = document.getElementById('progressCircle');
+        if (circleElement) circleElement.style.display = 'flex';
+
         setTimeout(() => {
             gameAudio.play();
             startGameLoop(rawDataProfile.notes);
