@@ -120,7 +120,7 @@ body::before {
 }
 
 /* =======================================================
-   FIXED: SHIFTED HUD LAYOUT ELEMENTS
+    HUD LAYOUT ELEMENTS
    ======================================================= */
 
 /* Locks live accuracy counter into the upper right corner */
@@ -161,6 +161,45 @@ body::before {
     50% { transform: scale(1.15); color: #00f2fe; }
     100% { transform: scale(1); }
 }
+
+/* =======================================================
+    INJECTED: OSU!-STYLE PROGRESS TRACKER RADIUS
+   ======================================================= */
+.osu-progress-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    /* Default dark track base wrapper */
+    background: conic-gradient(#00f2fe 0%, #222 0%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 25px;
+    right: 240px; /* Shifted out slightly from 210px to accommodate 100.00% width cleanly */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+    z-index: 8;
+}
+
+.circle-inner {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #080810; /* Perfectly blends into your dark layout container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#progressPercent {
+    color: #fff;
+    font-size: 0.85rem;
+    font-family: system-ui, sans-serif;
+    font-weight: 900;
+    font-style: italic;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
+}
+/* ======================================================= */
 
 /* Arena Alignment Frame Wrapper */
 .arena-wrapper {
