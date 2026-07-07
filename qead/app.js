@@ -176,8 +176,17 @@ function updateEngineClock() {
 
     const currentPlaybackTime = gameAudio.currentTime * 1000;
 
+    // =========================================================================
+    // UPDATED MATCH CONDITION: Let the track finish playing naturally
+    // =========================================================================
     const lastNote = activeTimeline[activeTimeline.length - 1];
-    if (gameAudio.ended || (lastNote && currentPlaybackTime > lastNote.time + 1000)) {
+    
+    // Condition 1: Audio track naturally hits the end frame
+    // Condition 2: Safety buffer (4 seconds after last note) ONLY kicks in if audio hangs
+    const trackFinishedNaturally = gameAudio.ended;
+    const safetyBufferReached = lastNote && (currentPlaybackTime > lastNote.time + 4000);
+
+    if (trackFinishedNaturally || safetyBufferReached) {
         triggerResultsScreen();
         return;
     }
