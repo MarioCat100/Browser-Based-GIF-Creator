@@ -170,7 +170,7 @@ body::before {
     height: 60px;
     border-radius: 50%;
     background: conic-gradient(#00f2fe 0%, #222 0%);
-    display: none; /* CHANGED FROM flex TO none: Hidden by default until song triggers */
+    display: none; 
     align-items: center;
     justify-content: center;
     position: absolute;
@@ -198,6 +198,212 @@ body::before {
     font-style: italic;
     text-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
 }
+
+/* =======================================================
+    OSU!-STYLE SONG SELECTION INTERFACE DIRECTIVES
+   ======================================================= */
+.song-select-dashboard {
+    display: flex;
+    width: 100%;
+    max-width: 1100px;
+    height: 80vh;
+    gap: 40px;
+    z-index: 20;
+}
+
+/* Left Panel styling */
+.menu-preview-panel {
+    flex: 1;
+    background: rgba(16, 16, 24, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.preview-art-frame {
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 16 / 9;
+    background: rgba(255,255,255,0.02);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    margin-bottom: 25px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+}
+
+.preview-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.preview-artist {
+    font-size: 1rem;
+    color: #aaa;
+    margin-bottom: 30px;
+}
+
+.menu-play-btn {
+    width: 100%;
+    max-width: 260px;
+    background: linear-gradient(135deg, #00ff88, #00f2fe);
+    color: #080810;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.menu-play-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
+}
+
+.compact-upload-zone {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.compact-upload-zone:hover { background: rgba(255,255,255,0.12); }
+
+/* Right Panel: Scrollable Song Wheel stack */
+.song-wheel {
+    flex: 1.2;
+    overflow-y: auto;
+    padding-right: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Custom layout scrollbar styling */
+.song-wheel::-webkit-scrollbar { width: 6px; }
+.song-wheel::-webkit-scrollbar-track { background: rgba(255,255,255,0.01); }
+.song-wheel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.song-wheel::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 254, 0.4); }
+
+/* Individual Song Cards */
+.song-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 18px 25px;
+    border-radius: 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.song-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; width: 5px; height: 100%;
+    background: #4facfe;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.song-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(8px);
+    border-color: rgba(79, 172, 254, 0.3);
+}
+
+/* Active Highlight state when clicked */
+.song-card.active-card {
+    background: rgba(79, 172, 254, 0.12);
+    border-color: #4facfe;
+    box-shadow: 0 5px 15px rgba(79, 172, 254, 0.2);
+    transform: translateX(12px);
+}
+.song-card.active-card::before { opacity: 1; }
+
+.card-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.card-artist {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* =======================================================
+    SEARCH BAR & META METRIC BADGE EXTENSIONS
+   ======================================================= */
+.menu-search-bar {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 20px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.menu-search-bar:focus {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #00f2fe;
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+}
+
+/* Metadata Badge Flex Containers */
+.card-meta-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.meta-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.meta-badge.difficulty {
+    background: rgba(255, 46, 126, 0.15);
+    color: #ff2e7e;
+    border: 1px solid rgba(255, 46, 126, 0.2);
+}
+
+.meta-badge.duration {
+    background: rgba(0, 242, 254, 0.15);
+    color: #00f2fe;
+    border: 1px solid rgba(0, 242, 254, 0.2);
+}
+
 /* ======================================================= */
 
 /* Arena Alignment Frame Wrapper */
