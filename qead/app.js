@@ -20,7 +20,7 @@ let mapLoaded = false;
 let cachedRawNotes = []; 
 let currentBgURL = ""; // Tracks the active object URL to clean up memory leaks
 
-// NEW: Tracks if artwork should display (defaults to true if not set)222
+// NEW: Tracks if artwork should display (defaults to true if not set)
 let showArtwork = localStorage.getItem('showArtwork') !== 'false';
 
 // Performance Counters Matrix
@@ -168,6 +168,26 @@ function startGameLoop(parsedNotes) {
     requestAnimationFrame(updateEngineClock);
 }
 
+// Calculates song completion percentage and handles the radial layout math
+function updateOsuProgressCircle() {
+    if (!gameAudio || isPaused) return;
+
+    const currentSeconds = gameAudio.currentTime;
+    const totalSeconds = gameAudio.duration || 0;
+    if (totalSeconds === 0) return;
+
+    const progressPercent = Math.floor((currentSeconds / totalSeconds) * 100);
+    
+    const percentLabel = document.getElementById('progressPercent');
+    if (percentLabel) percentLabel.innerText = `${progressPercent}%`;
+
+    const circleElement = document.getElementById('progressCircle');
+    if (circleElement) {
+        // Spins the neon cyan fill clockwise based on the completion accuracy math
+        circleElement.style.background = `conic-gradient(#00f2fe ${progressPercent}%, #222 ${progressPercent}%)`;
+    }
+}
+
 function updateEngineClock() {
     if (isPaused || !gameAudio) {
         requestAnimationFrame(updateEngineClock);
@@ -176,13 +196,9 @@ function updateEngineClock() {
 
     const currentPlaybackTime = gameAudio.currentTime * 1000;
 
-    // =========================================================================
-    // UPDATED MATCH CONDITION: Let the track finish playing naturally
-    // =========================================================================
     const lastNote = activeTimeline[activeTimeline.length - 1];
     
-    // Condition 1: Audio track naturally hits the end frame
-    // Condition 2: Safety buffer (4 seconds after last note) ONLY kicks in if audio hangs
+    // FIXED OUTRO: PRIMARY check lets audio finish smoothly right to the final frame
     const trackFinishedNaturally = gameAudio.ended;
     const safetyBufferReached = lastNote && (currentPlaybackTime > lastNote.time + 4000);
 
@@ -190,6 +206,9 @@ function updateEngineClock() {
         triggerResultsScreen();
         return;
     }
+
+    // Live update the progress tracker dial every animation clock refresh frame
+    updateOsuProgressCircle();
 
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
@@ -357,10 +376,11 @@ function handlePlayAgainRetry() {
     gameAudio.currentTime = 0;
     const freshTimelineCopy = JSON.parse(cachedRawNotes);
 
+    // FIXED RETRY: Adds the same 3-second lead-in buffer when you restart a map
     setTimeout(() => {
         gameAudio.play();
         startGameLoop(freshTimelineCopy);
-    }, 600);
+    }, 3000); 
 }
 
 function handleReturnToHome() {
@@ -391,11 +411,17 @@ function handleReturnToHome() {
         currentBgURL = "";
     }
 
+    // RESET METRICS: Restores progress radial ring properties when heading back home
+    const percentLabel = document.getElementById('progressPercent');
+    if (percentLabel) percentLabel.innerText = "0%";
+    const circleElement = document.getElementById('progressCircle');
+    if (circleElement) circleElement.style.background = `conic-gradient(#00f2fe 0%, #222 0%)`;
+
     folderInput.value = "";
     uploadZone.style.display = 'flex';
 }
 
-// NEW: Function to dynamically change the layout background based on setting state
+// Function to dynamically change the layout background based on setting state
 function refreshBackgroundView() {
     if (showArtwork && currentBgURL) {
         document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url(${currentBgURL})`;
@@ -406,7 +432,7 @@ function refreshBackgroundView() {
     }
 }
 
-// NEW: Click event listener for the live toggle button
+// Click event listener for the live toggle button
 if (toggleBgBtn) {
     toggleBgBtn.addEventListener('click', () => {
         showArtwork = !showArtwork;
@@ -444,10 +470,11 @@ folderInput.addEventListener('change', async (e) => {
     gameAudio = new Audio(audioURL);
 
     gameAudio.addEventListener('canplaythrough', () => {
+        // FIXED START: Increased delay from 1000ms to 3000ms for a proper osu!-style ready buffer
         setTimeout(() => {
             gameAudio.play();
             startGameLoop(rawDataProfile.notes);
-        }, 1000);
+        }, 3000);
     }, { once: true });
 });
 
