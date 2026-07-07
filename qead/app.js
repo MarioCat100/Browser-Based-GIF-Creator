@@ -1,3 +1,26 @@
+// =========================================================================
+// --- LIVE SUPABASE CLOUD CONNECTION ENGINE CONFIGURATION ---
+// =========================================================================
+const SUPABASE_URL = "https://zxrozrupbgbliuovmzgz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_x3p7Va4Unp2ldSNBH8VWRw_4wQQGc1g";
+
+// Uses the official global library bundle loaded via your HTML script tag
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Active runtime state variables
+let globalSongsPool = []; // Will hold rows loaded asynchronously from the database
+let activeSelectedTrack = null;
+let isPaused = false;
+let currentCombo = 0;
+let activeTimeline = [];
+let nextNoteIndex = 0;
+let gameAudio = null;
+let mapLoaded = false;
+let cachedRawNotes = []; 
+let lastRenderedPercent = -1;
+let showArtwork = localStorage.getItem('showArtwork') !== 'false';
+
+// DOM ELEMENT SELECTORS
 const pauseOverlay = document.getElementById('pauseOverlay');
 const pauseBtn = document.getElementById('pauseBtn');
 const resumeBtn = document.getElementById('resumeBtn');
@@ -11,7 +34,6 @@ const retryBtn = document.getElementById('retryBtn') || document.getElementById(
 const homeBtn = document.getElementById('homeBtn');
 const toggleBgBtn = document.getElementById('toggleBgBtn'); 
 
-// DASHBOARD VIEW SELECTORS
 const songSelectScreen = document.getElementById('songSelectScreen');
 const gameArena = document.getElementById('gameArena');
 const songWheelList = document.getElementById('songWheelList');
@@ -19,45 +41,9 @@ const menuSongTitle = document.getElementById('menuSongTitle');
 const menuSongArtist = document.getElementById('menuSongArtist');
 const menuArtPreview = document.getElementById('menuArtPreview');
 const menuPlayBtn = document.getElementById('menuPlayBtn');
-const menuSearchInput = document.getElementById('menuSearchInput'); // NEW SEARCH SELECTOR
+const menuSearchInput = document.getElementById('menuSearchInput');
 
-let isPaused = false;
-let currentCombo = 0;
-let activeTimeline = [];
-let nextNoteIndex = 0;
-let gameAudio = null;
-let mapLoaded = false;
-let cachedRawNotes = []; 
-let currentBgURL = ""; 
-let lastRenderedPercent = -1;
-let showArtwork = localStorage.getItem('showArtwork') !== 'false';
-
-// MOCK POOL: Updated with song duration strings and difficulty star ratings
-const localSongsPool = [
-    {
-        id: "mock-1",
-        title: "FREEDOM DIVE",
-        artist: "xi",
-        stars: "5.4★",
-        durationText: "4:22",
-        audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", 
-        bgSrc: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500", 
-        notes: [{time: 1000, targetId: 'box-top-left'}, {time: 2000, targetId: 'box-top-right'}, {time: 3000, targetId: 'box-bottom-left'}]
-    },
-    {
-        id: "mock-2",
-        title: "BRAIN POWER",
-        artist: "NOMA",
-        stars: "4.2★",
-        durationText: "2:15",
-        audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-        bgSrc: "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?w=500",
-        notes: [{time: 1000, targetId: 'box-bottom-right'}, {time: 1500, targetId: 'box-top-left'}, {time: 2000, targetId: 'box-top-right'}]
-    }
-];
-
-let activeSelectedTrack = null;
-
+// PERFORMANCE COUNTERS MATRIX
 const scoreStats = {
     count300: 0,
     count100: 0,
@@ -80,25 +66,63 @@ const getActiveKeyMap = () => ({
     [userSettings.bottomRight]: { element: document.getElementById('box-bottom-right'), color: '#00ff88' }
 });
 
-// POPULATE WHEEL WITH REAL-TIME FILTER REGEX CHECK MATCHES
+// =========================================================================
+// --- ASYNCHRONOUS DATABASE FETCH GATEWAY ---
+// =========================================================================
+async function fetchTracksFromCloud() {
+    if (songWheelList) {
+        songWheelList.innerHTML = `<div style="color: #00f2fe; font-style: italic; padding: 20px; text-align:center;">Connecting to cloud matrix...</div>`;
+    }
+    
+    try {
+        // Pulls all rows from your public.songs table
+        const { data, error } = await supabaseClient
+            .from('songs')
+            .select('*')
+            .order('title', { ascending: true });
+
+        if (error) throw error;
+
+        // Map database headers directly into our localized layout profiles
+        globalSongsPool = data.map(row => ({
+            id: row.id,
+            title: row.title,
+            artist: row.artist,
+            stars: row.stars,
+            durationText: row.duration_text,
+            audioSrc: row.audio_url,
+            bgSrc: row.bg_url,
+            notes: row.osu_notes // Stored securely as native structured JSON
+        }));
+
+        // Render the freshly pulled tracks list onto the screen
+        buildSongWheelMenu();
+
+    } catch (err) {
+        console.error("Cloud pipeline fetch failure: ", err);
+        if (songWheelList) {
+            songWheelList.innerHTML = `<div style="color: #da3637; font-weight: bold; padding: 20px; text-align:center;">Failed to connect to backend server.</div>`;
+        }
+    }
+}
+
+// POPULATE WHEEL USING FILTER REGEX STRINGS
 function buildSongWheelMenu(filterQuery = "") {
     if (!songWheelList) return;
-    songWheelList.innerHTML = ""; // Wipe grid cards clean
+    songWheelList.innerHTML = ""; 
 
     const cleanQuery = filterQuery.toLowerCase().trim();
 
-    localSongsPool.forEach(song => {
-        // Query filter checking rules (checks title match or artist match matches)
+    globalSongsPool.forEach(song => {
         const matchTitle = song.title.toLowerCase().includes(cleanQuery);
         const matchArtist = song.artist.toLowerCase().includes(cleanQuery);
         
-        if (cleanQuery && !matchTitle && !matchArtist) return; // Skip if filter fails
+        if (cleanQuery && !matchTitle && !matchArtist) return; 
 
         const card = document.createElement('div');
         card.className = "song-card";
         card.id = `card-${song.id}`;
         
-        // Injected layout logic to draw the custom metric badges inside the card
         card.innerHTML = `
             <div class="card-title">${song.title}</div>
             <div class="card-artist">${song.artist}</div>
@@ -108,7 +132,6 @@ function buildSongWheelMenu(filterQuery = "") {
             </div>
         `;
         
-        // Maintain active persistent tracking selection visuals on filter refreshes
         if (activeSelectedTrack && activeSelectedTrack.id === song.id) {
             card.classList.add('active-card');
         }
@@ -117,8 +140,9 @@ function buildSongWheelMenu(filterQuery = "") {
         songWheelList.appendChild(card);
     });
 
-    // Edge check notice if search queries filter out every track card entry
-    if (songWheelList.children.length === 0) {
+    if (globalSongsPool.length === 0) {
+        songWheelList.innerHTML = `<div style="color: #555; font-style: italic; padding: 20px; text-align:center;">Database is empty. Add track data rows via the Supabase Dashboard!</div>`;
+    } else if (songWheelList.children.length === 0) {
         songWheelList.innerHTML = `<div style="color: #555; font-style: italic; padding: 20px; text-align:center;">No tracks match your query...</div>`;
     }
 }
@@ -137,7 +161,7 @@ function selectTrackFromWheel(song) {
     menuPlayBtn.style.display = "block";
 }
 
-// SETUP LIVE CAPTURE INPUT EVENT TRACKER FOR THE SEARCH BAR
+// CAPTURE REAL-TIME SEARCH TEXT ENTRIES
 if (menuSearchInput) {
     menuSearchInput.addEventListener('input', (e) => {
         buildSongWheelMenu(e.target.value);
@@ -156,6 +180,7 @@ if (menuPlayBtn) {
         refreshBackgroundView();
 
         gameAudio = new Audio(activeSelectedTrack.audioSrc);
+        gameAudio.crossOrigin = "anonymous"; // Prevents CORS media blocking during cross-domain streaming
         
         const circleElement = document.getElementById('progressCircle');
         if (circleElement) circleElement.style.display = 'flex';
@@ -589,6 +614,7 @@ if (toggleBgBtn) {
     });
 }
 
+// Keeping local manual .osu folder parses active for testing local exports
 folderInput.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);
     const osuFile = files.find(f => f.name.endsWith('.osu'));
@@ -693,5 +719,5 @@ if (homeBtn) {
     homeBtn.addEventListener('click', handleReturnToHome);
 }
 
-// INITIATE ENGINE SETUP
-buildSongWheelMenu();
+// INITIALIZE RUNTIME TRIGGER: Pull tracks from the cloud on setup load
+fetchTracksFromCloud();
