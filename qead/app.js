@@ -11,6 +11,16 @@ const retryBtn = document.getElementById('retryBtn') || document.getElementById(
 const homeBtn = document.getElementById('homeBtn');
 const toggleBgBtn = document.getElementById('toggleBgBtn'); 
 
+// DASHBOARD VIEW SELECTORS
+const songSelectScreen = document.getElementById('songSelectScreen');
+const gameArena = document.getElementById('gameArena');
+const songWheelList = document.getElementById('songWheelList');
+const menuSongTitle = document.getElementById('menuSongTitle');
+const menuSongArtist = document.getElementById('menuSongArtist');
+const menuArtPreview = document.getElementById('menuArtPreview');
+const menuPlayBtn = document.getElementById('menuPlayBtn');
+const menuSearchInput = document.getElementById('menuSearchInput'); // NEW SEARCH SELECTOR
+
 let isPaused = false;
 let currentCombo = 0;
 let activeTimeline = [];
@@ -19,11 +29,34 @@ let gameAudio = null;
 let mapLoaded = false;
 let cachedRawNotes = []; 
 let currentBgURL = ""; 
-
-// Optimized: Track the last rendered percentage to prevent redundant DOM painting redraws
 let lastRenderedPercent = -1;
-
 let showArtwork = localStorage.getItem('showArtwork') !== 'false';
+
+// MOCK POOL: Updated with song duration strings and difficulty star ratings
+const localSongsPool = [
+    {
+        id: "mock-1",
+        title: "FREEDOM DIVE",
+        artist: "xi",
+        stars: "5.4★",
+        durationText: "4:22",
+        audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", 
+        bgSrc: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500", 
+        notes: [{time: 1000, targetId: 'box-top-left'}, {time: 2000, targetId: 'box-top-right'}, {time: 3000, targetId: 'box-bottom-left'}]
+    },
+    {
+        id: "mock-2",
+        title: "BRAIN POWER",
+        artist: "NOMA",
+        stars: "4.2★",
+        durationText: "2:15",
+        audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        bgSrc: "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?w=500",
+        notes: [{time: 1000, targetId: 'box-bottom-right'}, {time: 1500, targetId: 'box-top-left'}, {time: 2000, targetId: 'box-top-right'}]
+    }
+];
+
+let activeSelectedTrack = null;
 
 const scoreStats = {
     count300: 0,
@@ -47,13 +80,104 @@ const getActiveKeyMap = () => ({
     [userSettings.bottomRight]: { element: document.getElementById('box-bottom-right'), color: '#00ff88' }
 });
 
+// POPULATE WHEEL WITH REAL-TIME FILTER REGEX CHECK MATCHES
+function buildSongWheelMenu(filterQuery = "") {
+    if (!songWheelList) return;
+    songWheelList.innerHTML = ""; // Wipe grid cards clean
+
+    const cleanQuery = filterQuery.toLowerCase().trim();
+
+    localSongsPool.forEach(song => {
+        // Query filter checking rules (checks title match or artist match matches)
+        const matchTitle = song.title.toLowerCase().includes(cleanQuery);
+        const matchArtist = song.artist.toLowerCase().includes(cleanQuery);
+        
+        if (cleanQuery && !matchTitle && !matchArtist) return; // Skip if filter fails
+
+        const card = document.createElement('div');
+        card.className = "song-card";
+        card.id = `card-${song.id}`;
+        
+        // Injected layout logic to draw the custom metric badges inside the card
+        card.innerHTML = `
+            <div class="card-title">${song.title}</div>
+            <div class="card-artist">${song.artist}</div>
+            <div class="card-meta-row">
+                <span class="meta-badge difficulty">${song.stars}</span>
+                <span class="meta-badge duration">⏱ ${song.durationText}</span>
+            </div>
+        `;
+        
+        // Maintain active persistent tracking selection visuals on filter refreshes
+        if (activeSelectedTrack && activeSelectedTrack.id === song.id) {
+            card.classList.add('active-card');
+        }
+        
+        card.addEventListener('click', () => selectTrackFromWheel(song));
+        songWheelList.appendChild(card);
+    });
+
+    // Edge check notice if search queries filter out every track card entry
+    if (songWheelList.children.length === 0) {
+        songWheelList.innerHTML = `<div style="color: #555; font-style: italic; padding: 20px; text-align:center;">No tracks match your query...</div>`;
+    }
+}
+
+function selectTrackFromWheel(song) {
+    activeSelectedTrack = song;
+    
+    document.querySelectorAll('.song-card').forEach(c => c.classList.remove('active-card'));
+    const targetedCard = document.getElementById(`card-${song.id}`);
+    if (targetedCard) targetedCard.classList.add('active-card');
+
+    menuSongTitle.innerText = song.title.toUpperCase();
+    menuSongArtist.innerText = `${song.artist.toUpperCase()} [${song.stars}]`;
+    
+    menuArtPreview.parentElement.style.backgroundImage = `url(${song.bgSrc})`;
+    menuPlayBtn.style.display = "block";
+}
+
+// SETUP LIVE CAPTURE INPUT EVENT TRACKER FOR THE SEARCH BAR
+if (menuSearchInput) {
+    menuSearchInput.addEventListener('input', (e) => {
+        buildSongWheelMenu(e.target.value);
+    });
+}
+
+if (menuPlayBtn) {
+    menuPlayBtn.addEventListener('click', () => {
+        if (!activeSelectedTrack) return;
+        
+        songSelectScreen.style.display = "none";
+        gameArena.style.display = "block";
+        
+        songTitleDisplay.innerText = `qead // ${activeSelectedTrack.title.toUpperCase()}`;
+        currentBgURL = activeSelectedTrack.bgSrc;
+        refreshBackgroundView();
+
+        gameAudio = new Audio(activeSelectedTrack.audioSrc);
+        
+        const circleElement = document.getElementById('progressCircle');
+        if (circleElement) circleElement.style.display = 'flex';
+        lastRenderedPercent = -1;
+
+        gameAudio.addEventListener('canplaythrough', () => {
+            setTimeout(() => {
+                gameAudio.play();
+                cachedRawNotes = JSON.stringify(activeSelectedTrack.notes);
+                startGameLoop(JSON.parse(cachedRawNotes));
+            }, 3000); 
+        }, { once: true });
+    });
+}
+
 const hitSoundFile = new Audio('soft-hitnormal.wav'); 
 hitSoundFile.preload = 'auto';
 
 function playHitSound() {
     const soundClone = hitSoundFile.cloneNode();
     soundClone.volume = 0.5;
-    soundClone.play().catch(err => console.log("Audio block context: ", err));
+    soundClone.play().catch(err => console.log("Audio pipeline muted: ", err));
 }
 
 const missSoundFile = new Audio('combobreak.mp3'); 
@@ -62,7 +186,7 @@ missSoundFile.preload = 'auto';
 function playMissSound() {
     const soundClone = missSoundFile.cloneNode();
     soundClone.volume = 0.6; 
-    soundClone.play().catch(err => console.log("Miss audio block context: ", err));
+    soundClone.play().catch(err => console.log("Miss clip blocked: ", err));
 }
 
 if (toggleBgBtn) {
@@ -180,14 +304,11 @@ function startGameLoop(parsedNotes) {
     liveAccuracyDisplay.innerText = "100.00%";
     liveAccuracyDisplay.style.display = 'block';
     
-    lastRenderedPercent = -1; // Reset tracker
-    
     mapLoaded = true;
     isPaused = false;
     requestAnimationFrame(updateEngineClock);
 }
 
-// OPTIMIZED: Now only touches the DOM style tree when an actual whole integer percentage changes!
 function updateOsuProgressCircle() {
     if (!gameAudio || isPaused) return;
 
@@ -196,8 +317,6 @@ function updateOsuProgressCircle() {
     if (totalSeconds === 0) return;
 
     const progressPercent = Math.floor((currentSeconds / totalSeconds) * 100);
-    
-    // GUARD RAIL: If the percentage is exactly the same as last frame, skip painting entirely
     if (progressPercent === lastRenderedPercent) return;
     lastRenderedPercent = progressPercent;
 
@@ -430,12 +549,15 @@ function handleReturnToHome() {
     comboDisplay.style.display = 'none';
     liveAccuracyDisplay.style.display = 'none';
     resultsOverlay.style.display = 'none';
+    gameArena.style.display = "none";
+
+    songSelectScreen.style.display = "flex";
 
     document.body.style.backgroundImage = "";
-    if (currentBgURL) {
+    if (currentBgURL && !currentBgURL.startsWith('http')) {
         URL.revokeObjectURL(currentBgURL);
-        currentBgURL = "";
     }
+    currentBgURL = "";
 
     const percentLabel = document.getElementById('progressPercent');
     if (percentLabel) percentLabel.innerText = "0%";
@@ -446,7 +568,6 @@ function handleReturnToHome() {
     }
 
     folderInput.value = "";
-    uploadZone.style.display = 'flex';
 }
 
 function refreshBackgroundView() {
@@ -478,7 +599,8 @@ folderInput.addEventListener('change', async (e) => {
         return;
     }
 
-    uploadZone.style.display = 'none';
+    songSelectScreen.style.display = "none";
+    gameArena.style.display = "block";
 
     const rawDataProfile = parseOsuFile(await osuFile.text());
     document.getElementById('resSongTitle').innerText = rawDataProfile.title;
@@ -497,7 +619,6 @@ folderInput.addEventListener('change', async (e) => {
     gameAudio.addEventListener('canplaythrough', () => {
         const circleElement = document.getElementById('progressCircle');
         if (circleElement) circleElement.style.display = 'flex';
-
         lastRenderedPercent = -1;
 
         setTimeout(() => {
@@ -571,3 +692,6 @@ if (retryBtn) {
 if (homeBtn) {
     homeBtn.addEventListener('click', handleReturnToHome);
 }
+
+// INITIATE ENGINE SETUP
+buildSongWheelMenu();
