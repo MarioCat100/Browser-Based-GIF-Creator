@@ -169,14 +169,13 @@ body::before {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    /* Default dark track base wrapper */
     background: conic-gradient(#00f2fe 0%, #222 0%);
-    display: flex;
+    display: none; /* CHANGED FROM flex TO none: Hidden by default until song triggers */
     align-items: center;
     justify-content: center;
     position: absolute;
     top: 25px;
-    right: 240px; /* Shifted out slightly from 210px to accommodate 100.00% width cleanly */
+    right: 240px; 
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
     z-index: 8;
 }
@@ -185,7 +184,7 @@ body::before {
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: #080810; /* Perfectly blends into your dark layout container */
+    background: #080810; 
     display: flex;
     align-items: center;
     justify-content: center;
