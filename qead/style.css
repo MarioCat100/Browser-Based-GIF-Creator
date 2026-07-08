@@ -2,7 +2,12 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+}
+
+/* Isolates non-selectable wrappers safely without breaking mobile touch events */
+body, .grid-box, .song-card, .sub-diff-card, .hud-btn, .menu-play-btn {
     user-select: none;
+    -webkit-user-select: none;
 }
 
 body {
@@ -306,7 +311,7 @@ body::before {
 
 .song-wheel::-webkit-scrollbar { width: 6px; }
 .song-wheel::-webkit-scrollbar-track { background: rgba(255,255,255,0.01); }
-.song-wheel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.song-wheel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 .song-wheel::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 254, 0.4); }
 
 /* Individual Song Cards & Accordion Wrappers */
@@ -649,7 +654,6 @@ body::before {
         height: calc(100vh - 70px);
     }
 
-    /* FIXED PARENT HEIGHT OVERRIDES: Lets the dashboard stretch cleanly to accommodate the scroll zone */
     .song-select-dashboard {
         flex-direction: column;
         height: calc(100vh - 90px); 
@@ -691,7 +695,6 @@ body::before {
         display: none !important;
     }
 
-    /* FIXED DISPLAY CONTAINER BOUNDS: Allows touch scrolling to take full priority over parent layers */
     .song-wheel {
         flex: 1;
         padding-right: 0px;
