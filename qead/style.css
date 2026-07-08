@@ -302,7 +302,7 @@ body::before {
 }
 .compact-upload-zone:hover { background: rgba(255,255,255,0.12); }
 
-/* Scrollable Track Wheel Stack */
+/* Right Panel: Scrollable Song Wheel stack */
 .song-wheel {
     flex: 1.2;
     overflow-y: auto;
@@ -317,6 +317,7 @@ body::before {
 .song-wheel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 .song-wheel::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 254, 0.4); }
 
+/* Individual Song Cards & Accordion Wrappers */
 .song-group-container {
     display: flex;
     flex-direction: column;
@@ -426,7 +427,9 @@ body::before {
     margin-top: 2px;
 }
 
-/* Metadata Configuration Badges */
+/* =======================================================
+    SEARCH BAR & META METRIC BADGE EXTENSIONS
+   ======================================================= */
 .menu-search-bar {
     width: 100%;
     background: rgba(255, 255, 255, 0.02);
@@ -446,13 +449,37 @@ body::before {
     box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
 }
 
-.card-meta-row { display: flex; gap: 10px; margin-top: 10px; }
-.meta-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 900; font-family: monospace; letter-spacing: 0.5px; }
-.meta-badge.count { background: rgba(255, 255, 255, 0.05); color: #aaa; border: 1px solid rgba(255,255,255,0.08); }
-.meta-badge.difficulty { background: rgba(255, 46, 126, 0.15); color: #ff2e7e; border: 1px solid rgba(255, 46, 126, 0.2); }
-.meta-badge.duration { background: rgba(0, 242, 254, 0.15); color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.2); }
+.card-meta-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
 
-/* Arena Core Framework Alignment */
+.meta-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.meta-badge.count { background: rgba(255, 255, 255, 0.05); color: #aaa; border: 1px solid rgba(255,255,255,0.08); }
+.meta-badge.difficulty {
+    background: rgba(255, 46, 126, 0.15);
+    color: #ff2e7e;
+    border: 1px solid rgba(255, 46, 126, 0.2);
+}
+
+.meta-badge.duration {
+    background: rgba(0, 242, 254, 0.15);
+    color: #00f2fe;
+    border: 1px solid rgba(0, 242, 254, 0.2);
+}
+
+/* ======================================================= */
+
+/* Arena Alignment Frame Wrapper */
 .arena-wrapper {
     position: relative;
     width: 85vw;
@@ -600,7 +627,7 @@ body::before {
    ======================================================= */
 @media only screen and (max-width: 768px) {
     body {
-        overflow-y: auto !important;
+        overflow-y: scroll !important;
         height: auto;
     }
 
@@ -615,19 +642,19 @@ body::before {
         pointer-events: none;
     }
 
-    /* MOBILE HEADERS STYLING REWRITE: Fixes the alignment, truncation, and layout collision */
     .hud {
         padding: 0 12px;
-        height: 75px; /* Slightly deeper header height for padding clearance */
+        height: 70px;
     }
 
+    /* Fixed the song title scale size so it never spills down */
     .song-title {
-        font-size: 0.85rem !important; /* Scaled down from 1.2rem to fit narrow screen bounds cleanly */
+        font-size: 0.85rem !important;
         line-height: 1.3;
-        max-width: 180px; /* Constraints bounds layout safely between header option buttons */
+        max-width: 180px;
         margin: 0 auto;
         display: -webkit-box;
-        -webkit-line-clamp: 2; /* Maximum lines allowed before graceful text truncation sets in */
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -639,44 +666,11 @@ body::before {
         font-size: 0.8rem;
     }
 
-    /* GAME ARENA VIEWPORT ADJUSTMENTS: Drops element clusters down to fully clear the title lines */
     .game-container {
         padding: 10px;
-        height: auto;
-        min-height: calc(100vh - 75px);
-        justify-content: flex-start;
-        padding-top: 35px; /* ◄ Pushes tracking elements down to guarantee clearance */
+        height: calc(100vh - 70px);
     }
 
-    .live-combo-hud {
-        margin-bottom: 15px;
-    }
-
-    /* PROGRESS METRIC GRAPHICS POSITION REBALANCE */
-    .osu-progress-circle {
-        top: 95px; /* ◄ Drops tracker disk safely beneath the newly structured title block */
-        right: unset;
-        left: 20px; /* Left anchor looks beautifully balanced paired side-by-side with accuracy */
-        width: 50px;
-        height: 50px;
-    }
-
-    .circle-inner {
-        width: 38px;
-        height: 38px;
-    }
-
-    #progressPercent {
-        font-size: 0.75rem;
-    }
-
-    .live-accuracy-hud {
-        top: 92px; /* ◄ Coaligns flawlessly straight across from the tracking circle */
-        right: 20px;
-        font-size: 2rem;
-    }
-
-    /* STICKY MENU PANEL SELECTION INDEX DIRECTIVES */
     .song-select-dashboard {
         flex-direction: column;
         height: auto; 
@@ -686,13 +680,14 @@ body::before {
         padding-bottom: 40px;
     }
 
+    /* Fixed sticky layout spacing parameters */
     .menu-preview-panel {
         flex: none;
         height: auto;
         padding: 15px;
         border-radius: 16px;
         position: sticky; 
-        top: 85px;
+        top: 80px; /* Aligns comfortably straight below the header bar */
         z-index: 50;
         background: rgba(12, 12, 18, 0.96);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -720,16 +715,22 @@ body::before {
         font-size: 1.05rem;
     }
 
-    .compact-upload-zone {
-        display: inline-block !important;
+    /* RESTORED AND ENABLED LOCAL FILE IMPORT CHANNELS FOR PHONE STORAGE */
+    .upload-zone {
+        display: block !important;
+        margin-bottom: 10px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .upload-btn {
         width: 100%;
-        text-align: center;
-        background: rgba(31, 111, 235, 0.15);
-        border: 1px solid rgba(31, 111, 235, 0.4);
-        color: #388bfd;
         padding: 10px;
-        font-size: 0.85rem;
-        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .compact-upload-zone {
+        display: none !important;
     }
     
     .menu-preview-panel p[style*="color: #666"] {
