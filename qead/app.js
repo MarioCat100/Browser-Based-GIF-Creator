@@ -92,7 +92,7 @@ async function fetchTracksFromCloud() {
             groups[baseTitle].difficulties.push({
                 id: row.id,
                 fullTitle: row.title,
-                artist: row.artist, // Copy down across structural rows to prevent selector display faults
+                artist: row.artist,
                 diffName: diffName,
                 stars: row.stars,
                 durationText: row.duration_text,
@@ -490,7 +490,7 @@ function handleInputHit(targetId) {
         let burstColor = match.color;
         
         const win300 = targetNote.isSpamDensity ? 140 : 90;
-        const win100 = targetNote.isSpamDensity ? 200 : 150;
+        const win100 = targetNote.isSpamDensity ? 250 : 150; // RESTORED SWEET SPOT: Extends registration to catch fast stream inputs cleanly
 
         if (offset <= win300) {
             scoreType = '300';
