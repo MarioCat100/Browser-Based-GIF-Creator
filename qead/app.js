@@ -92,7 +92,7 @@ async function fetchTracksFromCloud() {
             groups[baseTitle].difficulties.push({
                 id: row.id,
                 fullTitle: row.title,
-                artist: row.artist,
+                artist: row.artist, // Copy down across structural rows to prevent selector display faults
                 diffName: diffName,
                 stars: row.stars,
                 durationText: row.duration_text,
@@ -170,12 +170,39 @@ function buildSongWheelMenu(filterQuery = "") {
                 </div>
             `;
 
+            // SMART TOUCH SCROLL SEPARATION CONTROLS FOR DIFFICULTIES
+            let touchStartY = 0;
+            subCard.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            subCard.addEventListener('touchend', (e) => {
+                const touchEndY = e.changedTouches[0].clientY;
+                if (Math.abs(touchStartY - touchEndY) < 6) { // Tap condition met
+                    selectTrackFromWheel(track);
+                }
+            });
+
             subCard.addEventListener('click', (e) => {
-                e.stopPropagation(); 
                 selectTrackFromWheel(track);
             });
 
             diffListArea.appendChild(subCard);
+        });
+
+        // SMART TOUCH SCROLL SEPARATION CONTROLS FOR MASTER SONG CARDS
+        let masterTouchStartY = 0;
+        masterCard.addEventListener('touchstart', (e) => {
+            masterTouchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        masterCard.addEventListener('touchend', (e) => {
+            const masterTouchEndY = e.changedTouches[0].clientY;
+            if (Math.abs(masterTouchStartY - masterTouchEndY) < 6) { // Tap condition met
+                const isCurrentlyHidden = diffListArea.style.display === "none";
+                document.querySelectorAll('.difficulty-sub-list').forEach(el => el.style.display = "none");
+                diffListArea.style.display = isCurrentlyHidden ? "flex" : "none";
+            }
         });
 
         masterCard.addEventListener('click', () => {
@@ -530,6 +557,7 @@ function triggerJudgmentBurst(element, text, color) {
     setTimeout(() => burst.remove(), 400);
 }
 
+// REST OF THE BASLINE SCRIPT MATRIX REMAINS COMPLETELY UNTOUCHED
 function triggerResultsScreen() {
     isPaused = true;
     if (gameAudio) gameAudio.pause();
