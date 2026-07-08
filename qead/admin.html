@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>qead // central ingestor panel</title>
+    <title>qead // central secure ingestor panel</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { 
@@ -14,6 +14,12 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
+        }
+        /* Hidden by default until password authorization passes */
+        #secureContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
         }
         .panel { 
             background: rgba(255, 46, 126, 0.03); 
@@ -66,22 +72,50 @@
         a:hover { 
             color: #fff; 
         }
+        .error-screen {
+            text-align: center;
+            margin-top: 100px;
+            color: #da3637;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <div class="panel">
-        <h1>// AUTOMATED MAP PACK INGESTOR ARCHITECTURE</h1>
-        <label class="dropzone">
-            📂 CLICK TO SELECT / DROP OSU! SONG FOLDER
-            <input type="file" id="adminFolderInput" webkitdirectory directory multiple style="display: none;">
-        </label>
-        <div id="statusLog" class="log">System idling. Ready for bulk ingestion sequence...</div>
+    <div id="lockoutMsg" class="error-screen" style="display: none;">🔒 ACCESS DENIED: INVALID GATEWAY PASSCODE KEY SIGNATURE</div>
+
+    <div id="secureContainer">
+        <div class="panel">
+            <h1>// AUTOMATED MAP PACK INGESTOR ARCHITECTURE</h1>
+            <label class="dropzone">
+                📂 CLICK TO SELECT / DROP OSU! SONG FOLDER
+                <input type="file" id="adminFolderInput" webkitdirectory directory multiple style="display: none;">
+            </label>
+            <div id="statusLog" class="log">Secure gate open. Core engine idling...</div>
+        </div>
+
+        <a href="index.html">◀ Return to Main Game Channel</a>
     </div>
 
-    <a href="index.html">◀ Return to Main Game Channel</a>
-
     <script>
+        // =========================================================================
+        // --- CLIENT SIDE GATEWAY CHECK ---
+        // =========================================================================
+        // Change "your_secret_password" to whatever you want your admin key to be!
+        const ADMIN_PASSCODE = "277353"; 
+        
+        const userInput = prompt("Enter Master Backend Access Password:");
+        
+        if (userInput === ADMIN_PASSCODE) {
+            document.getElementById('secureContainer').style.display = 'flex';
+        } else {
+            document.getElementById('lockoutMsg').style.display = 'block';
+        }
+
+        // =========================================================================
+        // --- CORE INGESTOR BACKEND ENGINE LOGIC ---
+        // =========================================================================
         const SUPABASE_URL = "https://zxrozrupbgbliuovmzgz.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_x3p7Va4Unp2ldSNBH8VWRw_4wQQGc1g";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -89,84 +123,86 @@
         const folderInput = document.getElementById('adminFolderInput');
         const statusLog = document.getElementById('statusLog');
 
-        folderInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            const osuFiles = files.filter(f => f.name.endsWith('.osu'));
-            const audioFile = files.find(f => f.name.endsWith('.mp3'));
+        if (userInput === ADMIN_PASSCODE) {
+            folderInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                const osuFiles = files.filter(f => f.name.endsWith('.osu'));
+                const audioFile = files.find(f => f.name.endsWith('.mp3'));
 
-            if (osuFiles.length === 0 || !audioFile) {
-                statusLog.innerText = "❌ Cancelled: Folder must contain an .mp3 and at least one .osu file.";
-                return;
-            }
-
-            try {
-                statusLog.innerText = "⏳ 1/3: Uploading track audio binary to cloud storage...";
-                const audioPath = `audio_${Date.now()}_${audioFile.name}`;
-                const { error: audioErr } = await supabaseClient.storage.from('beatmaps').upload(audioPath, audioFile);
-                if (audioErr) throw audioErr;
-                const liveAudioURL = supabaseClient.storage.from('beatmaps').getPublicUrl(audioPath).data.publicUrl;
-
-                statusLog.innerText = "⏳ 2/3: Checking background artwork signatures...";
-                let liveBgURL = "";
-                let firstOsuText = await osuFiles[0].text();
-                let bgFilename = "";
-                
-                firstOsuText.split('\n').forEach(line => {
-                    if (line.trim().startsWith('0,0,"')) {
-                        bgFilename = line.split(',')[2].replace(/"/g, '').trim();
-                    }
-                });
-
-                if (bgFilename) {
-                    const bgFile = files.find(f => f.name.toLowerCase().endsWith(bgFilename.toLowerCase()));
-                    if (bgFile) {
-                        const bgPath = `bg_${Date.now()}_${bgFile.name}`;
-                        const { error: bgErr } = await supabaseClient.storage.from('beatmaps').upload(bgPath, bgFile);
-                        if (!bgErr) liveBgURL = supabaseClient.storage.from('beatmaps').getPublicUrl(bgPath).data.publicUrl;
-                    }
+                if (osuFiles.length === 0 || !audioFile) {
+                    statusLog.innerText = "❌ Cancelled: Folder must contain an .mp3 and at least one .osu file.";
+                    return;
                 }
 
-                statusLog.innerText = `⏳ 3/3: Bulk converting [${osuFiles.length}] separate difficulties into JSON database rows...`;
+                try {
+                    statusLog.innerText = "⏳ 1/3: Uploading track audio binary to cloud storage...";
+                    const audioPath = `audio_${Date.now()}_${audioFile.name}`;
+                    const { error: audioErr } = await supabaseClient.storage.from('beatmaps').upload(audioPath, audioFile);
+                    if (audioErr) throw audioErr;
+                    const liveAudioURL = supabaseClient.storage.from('beatmaps').getPublicUrl(audioPath).data.publicUrl;
 
-                for (let file of osuFiles) {
-                    let text = await file.text();
-                    let title = "Unknown Track", artist = "Unknown", version = "Normal", rawNotes = [];
-                    let isHitObjects = false;
-
-                    text.split('\n').forEach(line => {
-                        line = line.trim();
-                        if (line.startsWith('Title:')) title = line.split(':')[1].trim();
-                        if (line.startsWith('Artist:')) artist = line.split(':')[1].trim();
-                        if (line.startsWith('Version:')) version = line.split(':')[1].trim();
-                        if (line === '[HitObjects]') { isHitObjects = true; return; }
-                        if (isHitObjects && line.includes(',')) {
-                            const parts = line.split(',');
-                            const x = parseInt(parts[0]), y = parseInt(parts[1]), time = parseInt(parts[2]);
-                            let targetId = (x < 256 && y < 192) ? 'box-top-left' : (x >= 256 && y < 192) ? 'box-top-right' : (x < 256 && y >= 192) ? 'box-bottom-left' : 'box-bottom-right';
-                            rawNotes.push({ time, targetId, visualTriggered: false, flashed: false, hit: false, missed: false, isSpamDensity: false });
+                    statusLog.innerText = "⏳ 2/3: Checking background artwork signatures...";
+                    let liveBgURL = "";
+                    let firstOsuText = await osuFiles[0].text();
+                    let bgFilename = "";
+                    
+                    firstOsuText.split('\n').forEach(line => {
+                        if (line.trim().startsWith('0,0,"')) {
+                            bgFilename = line.split(',')[2].replace(/"/g, '').trim();
                         }
                     });
 
-                    rawNotes.sort((a, b) => a.time - b.time);
+                    if (bgFilename) {
+                        const bgFile = files.find(f => f.name.toLowerCase().endsWith(bgFilename.toLowerCase()));
+                        if (bgFile) {
+                            const bgPath = `bg_${Date.now()}_${bgFile.name}`;
+                            const { error: bgErr } = await supabaseClient.storage.from('beatmaps').upload(bgPath, bgFile);
+                            if (!bgErr) liveBgURL = supabaseClient.storage.from('beatmaps').getPublicUrl(bgPath).data.publicUrl;
+                        }
+                    }
 
-                    const { error: insertErr } = await supabaseClient.from('songs').insert([{
-                        title: `${title} [${version}]`,
-                        artist: artist, 
-                        stars: "4.2★",
-                        duration_text: "3:30",
-                        audio_url: liveAudioURL,
-                        bg_url: liveBgURL,
-                        osu_notes: rawNotes
-                    }]);
-                    if (insertErr) throw insertErr;
+                    statusLog.innerText = `⏳ 3/3: Bulk converting [${osuFiles.length}] separate difficulties into JSON database rows...`;
+
+                    for (let file of osuFiles) {
+                        let text = await file.text();
+                        let title = "Unknown Track", artist = "Unknown", version = "Normal", rawNotes = [];
+                        let isHitObjects = false;
+
+                        text.split('\n').forEach(line => {
+                            line = line.trim();
+                            if (line.startsWith('Title:')) title = line.split(':')[1].trim();
+                            if (line.startsWith('Artist:')) artist = line.split(':')[1].trim();
+                            if (line.startsWith('Version:')) version = line.split(':')[1].trim();
+                            if (line === '[HitObjects]') { isHitObjects = true; return; }
+                            if (isHitObjects && line.includes(',')) {
+                                const parts = line.split(',');
+                                const x = parseInt(parts[0]), y = parseInt(parts[1]), time = parseInt(parts[2]);
+                                let targetId = (x < 256 && y < 192) ? 'box-top-left' : (x >= 256 && y < 192) ? 'box-top-right' : (x < 256 && y >= 192) ? 'box-bottom-left' : 'box-bottom-right';
+                                rawNotes.push({ time, targetId, visualTriggered: false, flashed: false, hit: false, missed: false, isSpamDensity: false });
+                            }
+                        });
+
+                        rawNotes.sort((a, b) => a.time - b.time);
+
+                        const { error: insertErr } = await supabaseClient.from('songs').insert([{
+                            title: `${title} [${version}]`,
+                            artist: artist, 
+                            stars: "4.2★",
+                            duration_text: "3:30",
+                            audio_url: liveAudioURL,
+                            bg_url: liveBgURL,
+                            osu_notes: rawNotes
+                        }]);
+                        if (insertErr) throw insertErr;
+                    }
+
+                    statusLog.innerText = `✅ Ingestion successful! All [${osuFiles.length}] configurations cataloged online cleanly.`;
+                } catch (err) {
+                    console.error(err);
+                    statusLog.innerText = `❌ Terminal pipeline breakdown: ${err.message}`;
                 }
-
-                statusLog.innerText = `✅ Ingestion successful! All [${osuFiles.length}] configurations cataloged online cleanly.`;
-            } catch (err) {
-                console.error(err);
-                statusLog.innerText = `❌ Terminal pipeline breakdown: ${err.message}`;
-            }
-        });
+            });
+        }
     </script>
 </body>
 </html>
