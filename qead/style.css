@@ -37,7 +37,6 @@ body::before {
 /* Sleek Premium HUD */
 .hud {
     display: flex;
-    justify-open: space-between;
     justify-content: space-between;
     align-items: center;
     padding: 0 30px;
@@ -640,7 +639,7 @@ body::before {
    ======================================================= */
 @media only screen and (max-width: 768px) {
     body {
-        position: fixed; /* Prevents awkward iOS Safari rubber-band bouncing viewport issues */
+        position: fixed; 
         width: 100vw;
         height: 100vh;
     }
@@ -650,14 +649,12 @@ body::before {
         height: calc(100vh - 70px);
     }
 
-    /* Changes layout from side-by-side to vertical top-and-bottom stacking layout */
     .song-select-dashboard {
         flex-direction: column;
         height: 100%;
         gap: 15px;
     }
 
-    /* Formats preview card banner directly at the top of the mobile device */
     .menu-preview-panel {
         flex: none;
         height: auto;
@@ -665,7 +662,6 @@ body::before {
         border-radius: 16px;
     }
 
-    /* Hidden display mode drops big artwork background layers to pull wheel components up */
     .preview-art-frame {
         display: none;
     }
@@ -687,17 +683,18 @@ body::before {
         font-size: 1.1rem;
     }
 
-    /* Drop file input clutter out of mobile views safely */
     .compact-upload-zone, 
     .menu-preview-panel p[style*="color: #666"],
     .upload-zone {
         display: none !important;
     }
 
-    /* Forces scroll stack wheel container to occupy remaining display screen boundaries */
+    /* FIXES SCROLL LOCK: Overrides touch boundaries to allow native fluid mobile scrolling */
     .song-wheel {
         flex: 1;
         padding-right: 0px;
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     .song-card {
@@ -705,7 +702,6 @@ body::before {
         border-radius: 12px;
     }
 
-    /* Tighten accordion margins to fit text values accurately without squishing views */
     .difficulty-sub-list {
         padding-left: 12px;
     }
