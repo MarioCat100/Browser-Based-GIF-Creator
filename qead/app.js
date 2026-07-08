@@ -4,11 +4,9 @@
 const SUPABASE_URL = "https://zxrozrupbgbliuovmzgz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_x3p7Va4Unp2ldSNBH8VWRw_4wQQGc1g";
 
-// Uses the official global library bundle loaded via your HTML script tag
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Active runtime state variables
-let globalSongsPool = []; // Will hold rows loaded asynchronously from the database
+let globalSongsPool = []; // Holds structured song sets: { masterTitle, artist, difficulties: [...] }
 let activeSelectedTrack = null;
 let isPaused = false;
 let currentCombo = 0;
@@ -19,6 +17,7 @@ let mapLoaded = false;
 let cachedRawNotes = []; 
 let lastRenderedPercent = -1;
 let showArtwork = localStorage.getItem('showArtwork') !== 'false';
+let currentBgURL = "";
 
 // DOM ELEMENT SELECTORS
 const pauseOverlay = document.getElementById('pauseOverlay');
@@ -28,7 +27,6 @@ const comboDisplay = document.getElementById('comboDisplay');
 const liveAccuracyDisplay = document.getElementById('liveAccuracyDisplay');
 const songTitleDisplay = document.getElementById('songTitle');
 const folderInput = document.getElementById('folderInput');
-const uploadZone = document.getElementById('uploadZone');
 const resultsOverlay = document.getElementById('resultsOverlay');
 const retryBtn = document.getElementById('retryBtn') || document.getElementById('playAgainBtn');
 const homeBtn = document.getElementById('homeBtn');
@@ -44,20 +42,8 @@ const menuPlayBtn = document.getElementById('menuPlayBtn');
 const menuSearchInput = document.getElementById('menuSearchInput');
 
 // PERFORMANCE COUNTERS MATRIX
-const scoreStats = {
-    count300: 0,
-    count100: 0,
-    count50: 0,
-    countMiss: 0,
-    maxCombo: 0
-};
-
-const userSettings = {
-    topLeft: 'q',
-    topRight: 'e',
-    bottomLeft: 'a',
-    bottomRight: 'd'
-};
+const scoreStats = { count300: 0, count100: 0, count50: 0, countMiss: 0, maxCombo: 0 };
+const userSettings = { topLeft: 'q', topRight: 'e', bottomLeft: 'a', bottomRight: 'd' };
 
 const getActiveKeyMap = () => ({
     [userSettings.topLeft]: { element: document.getElementById('box-top-left'), color: '#00f2fe' },
@@ -75,7 +61,6 @@ async function fetchTracksFromCloud() {
     }
     
     try {
-        // Pulls all rows from your public.songs table
         const { data, error } = await supabaseClient
             .from('songs')
             .select('*')
@@ -83,19 +68,41 @@ async function fetchTracksFromCloud() {
 
         if (error) throw error;
 
-        // Map database headers directly into our localized layout profiles
-        globalSongsPool = data.map(row => ({
-            id: row.id,
-            title: row.title,
-            artist: row.artist,
-            stars: row.stars,
-            durationText: row.duration_text,
-            audioSrc: row.audio_url,
-            bgSrc: row.bg_url,
-            notes: row.osu_notes // Stored securely as native structured JSON
-        }));
+        // Group rows that share the same base title layout
+        const groups = {};
 
-        // Render the freshly pulled tracks list onto the screen
+        data.forEach(row => {
+            let baseTitle = row.title;
+            let diffName = "Normal";
+            const match = row.title.match(/^(.*)\s+\[(.*?)\]$/);
+            if (match) {
+                baseTitle = match[1].trim();
+                diffName = match[2].trim();
+            }
+
+            if (!groups[baseTitle]) {
+                groups[baseTitle] = {
+                    masterTitle: baseTitle,
+                    artist: row.artist,
+                    bgSrc: row.bg_url,
+                    difficulties: []
+                };
+            }
+
+            groups[baseTitle].difficulties.push({
+                id: row.id,
+                fullTitle: row.title,
+                artist: row.artist, // Copy down across structural rows to prevent selector display faults
+                diffName: diffName,
+                stars: row.stars,
+                durationText: row.duration_text,
+                audioSrc: row.audio_url,
+                bgSrc: row.bg_url,
+                notes: typeof row.osu_notes === 'string' ? JSON.parse(row.osu_notes) : row.osu_notes
+            });
+        });
+
+        globalSongsPool = Object.values(groups);
         buildSongWheelMenu();
 
     } catch (err) {
@@ -106,66 +113,96 @@ async function fetchTracksFromCloud() {
     }
 }
 
-// POPULATE WHEEL USING FILTER REGEX STRINGS
+// POPULATE WHEEL USING FILTER NESTED ACCORDION ENTRIES
 function buildSongWheelMenu(filterQuery = "") {
     if (!songWheelList) return;
     songWheelList.innerHTML = ""; 
 
     const cleanQuery = filterQuery.toLowerCase().trim();
 
-    globalSongsPool.forEach(song => {
-        const matchTitle = song.title.toLowerCase().includes(cleanQuery);
-        const matchArtist = song.artist.toLowerCase().includes(cleanQuery);
-        
+    globalSongsPool.forEach(group => {
+        const matchTitle = group.masterTitle.toLowerCase().includes(cleanQuery);
+        const matchArtist = group.artist.toLowerCase().includes(cleanQuery);
         if (cleanQuery && !matchTitle && !matchArtist) return; 
 
-        const card = document.createElement('div');
-        card.className = "song-card";
-        card.id = `card-${song.id}`;
-        
-        card.innerHTML = `
-            <div class="card-title">${song.title}</div>
-            <div class="card-artist">${song.artist}</div>
+        const groupContainer = document.createElement('div');
+        groupContainer.className = "song-group-container";
+
+        const masterCard = document.createElement('div');
+        masterCard.className = "song-card master-card";
+        masterCard.innerHTML = `
+            <div class="card-left">
+                <div class="card-title">${group.masterTitle}</div>
+                <div class="card-artist">${group.artist}</div>
+            </div>
             <div class="card-meta-row">
-                <span class="meta-badge difficulty">${song.stars}</span>
-                <span class="meta-badge duration">⏱ ${song.durationText}</span>
+                <span class="meta-badge count">${group.difficulties.length} Maps</span>
             </div>
         `;
-        
-        if (activeSelectedTrack && activeSelectedTrack.id === song.id) {
-            card.classList.add('active-card');
-        }
-        
-        card.addEventListener('click', () => selectTrackFromWheel(song));
-        songWheelList.appendChild(card);
+
+        const diffListArea = document.createElement('div');
+        diffListArea.className = "difficulty-sub-list";
+        diffListArea.style.display = "none"; 
+
+        group.difficulties.forEach(track => {
+            const subCard = document.createElement('div');
+            subCard.className = "sub-diff-card";
+            
+            if (activeSelectedTrack && activeSelectedTrack.id === track.id) {
+                subCard.classList.add('active-sub-card');
+                diffListArea.style.display = "flex"; 
+            }
+
+            subCard.innerHTML = `
+                <div class="sub-card-title">✦ ${track.diffName}</div>
+                <div class="sub-card-meta">
+                    <span class="meta-badge difficulty">${track.stars}</span>
+                    <span class="meta-badge duration">⏱ ${track.durationText}</span>
+                </div>
+            `;
+
+            subCard.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                selectTrackFromWheel(track);
+            });
+
+            diffListArea.appendChild(subCard);
+        });
+
+        masterCard.addEventListener('click', () => {
+            const isCurrentlyHidden = diffListArea.style.display === "none";
+            document.querySelectorAll('.difficulty-sub-list').forEach(el => el.style.display = "none");
+            diffListArea.style.display = isCurrentlyHidden ? "flex" : "none";
+        });
+
+        groupContainer.appendChild(masterCard);
+        groupContainer.appendChild(diffListArea);
+        songWheelList.appendChild(groupContainer);
     });
 
     if (globalSongsPool.length === 0) {
-        songWheelList.innerHTML = `<div style="color: #555; font-style: italic; padding: 20px; text-align:center;">Database is empty. Add track data rows via the Supabase Dashboard!</div>`;
-    } else if (songWheelList.children.length === 0) {
-        songWheelList.innerHTML = `<div style="color: #555; font-style: italic; padding: 20px; text-align:center;">No tracks match your query...</div>`;
+        songWheelList.innerHTML = `<div style="color: #555; font-style: italic; padding: 20px; text-align:center;">Database is empty. Add track data rows via admin module!</div>`;
     }
 }
 
-function selectTrackFromWheel(song) {
-    activeSelectedTrack = song;
-    
-    document.querySelectorAll('.song-card').forEach(c => c.classList.remove('active-card'));
-    const targetedCard = document.getElementById(`card-${song.id}`);
-    if (targetedCard) targetedCard.classList.add('active-card');
+function selectTrackFromWheel(track) {
+    activeSelectedTrack = track;
+    buildSongWheelMenu(menuSearchInput ? menuSearchInput.value : "");
 
-    menuSongTitle.innerText = song.title.toUpperCase();
-    menuSongArtist.innerText = `${song.artist.toUpperCase()} [${song.stars}]`;
+    if (menuSongTitle) menuSongTitle.innerText = track.fullTitle.toUpperCase();
+    if (menuSongArtist) menuSongArtist.innerText = `${track.artist.toUpperCase()} [${track.stars}]`;
     
-    menuArtPreview.parentElement.style.backgroundImage = `url(${song.bgSrc})`;
-    menuPlayBtn.style.display = "block";
+    if (menuArtPreview) {
+        menuArtPreview.style.backgroundImage = track.bgSrc ? `url(${track.bgSrc})` : "";
+        if (menuArtPreview.parentElement) {
+            menuArtPreview.parentElement.style.backgroundImage = track.bgSrc ? `url(${track.bgSrc})` : "";
+        }
+    }
+    if (menuPlayBtn) menuPlayBtn.style.display = "block";
 }
 
-// CAPTURE REAL-TIME SEARCH TEXT ENTRIES
 if (menuSearchInput) {
-    menuSearchInput.addEventListener('input', (e) => {
-        buildSongWheelMenu(e.target.value);
-    });
+    menuSearchInput.addEventListener('input', (e) => buildSongWheelMenu(e.target.value));
 }
 
 if (menuPlayBtn) {
@@ -175,12 +212,12 @@ if (menuPlayBtn) {
         songSelectScreen.style.display = "none";
         gameArena.style.display = "block";
         
-        songTitleDisplay.innerText = `qead // ${activeSelectedTrack.title.toUpperCase()}`;
+        songTitleDisplay.innerText = `qead // ${activeSelectedTrack.fullTitle.toUpperCase()}`;
         currentBgURL = activeSelectedTrack.bgSrc;
         refreshBackgroundView();
 
         gameAudio = new Audio(activeSelectedTrack.audioSrc);
-        gameAudio.crossOrigin = "anonymous"; // Prevents CORS media blocking during cross-domain streaming
+        gameAudio.crossOrigin = "anonymous"; 
         
         const circleElement = document.getElementById('progressCircle');
         if (circleElement) circleElement.style.display = 'flex';
@@ -309,7 +346,6 @@ function parseOsuFile(rawText) {
     }
 
     cachedRawNotes = JSON.stringify(rawNotes);
-
     return { notes: rawNotes, title: cleanTitle, bgFilename: bgFilename };
 }
 
@@ -318,11 +354,7 @@ function startGameLoop(parsedNotes) {
     nextNoteIndex = 0;
     currentCombo = 0;
     
-    scoreStats.count300 = 0;
-    scoreStats.count100 = 0;
-    scoreStats.count50 = 0;
-    scoreStats.countMiss = 0;
-    scoreStats.maxCombo = 0;
+    scoreStats.count300 = 0; scoreStats.count100 = 0; scoreStats.count50 = 0; scoreStats.countMiss = 0; scoreStats.maxCombo = 0;
     
     comboDisplay.innerText = "0x";
     comboDisplay.style.display = 'block';
@@ -354,6 +386,7 @@ function updateOsuProgressCircle() {
     }
 }
 
+/* RESTORED EXACT BASELINE RHYTHM CLOCK AND SPAWNING WINDOW CONDITIONS */
 function updateEngineClock() {
     if (isPaused || !gameAudio) {
         requestAnimationFrame(updateEngineClock);
@@ -363,10 +396,7 @@ function updateEngineClock() {
     const currentPlaybackTime = gameAudio.currentTime * 1000;
     const lastNote = activeTimeline[activeTimeline.length - 1];
     
-    const trackFinishedNaturally = gameAudio.ended;
-    const safetyBufferReached = lastNote && (currentPlaybackTime > lastNote.time + 4000);
-
-    if (trackFinishedNaturally || safetyBufferReached) {
+    if (gameAudio.ended || (lastNote && (currentPlaybackTime > lastNote.time + 4000))) {
         triggerResultsScreen();
         return;
     }
@@ -392,7 +422,6 @@ function updateEngineClock() {
             }
             
             el.appendChild(pulse);
-            
             note.pulseElement = pulse;
             note.visualTriggered = true;
         }
@@ -411,10 +440,7 @@ function updateEngineClock() {
         if (currentPlaybackTime > note.time + missBoundary && !note.hit && !note.missed) {
             note.missed = true;
             if (note.pulseElement) note.pulseElement.remove();
-            
-            if (currentCombo >= 5) {
-                playMissSound();
-            }
+            if (currentCombo >= 5) playMissSound();
 
             scoreStats.countMiss++;
             currentCombo = 0;
@@ -460,6 +486,7 @@ function handleInputHit(targetId) {
         if (offset <= win300) {
             scoreType = '300';
             scoreStats.count300++;
+            playHitSound();
         } else if (offset <= win100) {
             scoreType = '100';
             scoreStats.count100++;
@@ -471,9 +498,7 @@ function handleInputHit(targetId) {
         }
 
         currentCombo++;
-        if (currentCombo > scoreStats.maxCombo) {
-            scoreStats.maxCombo = currentCombo;
-        }
+        if (currentCombo > scoreStats.maxCombo) scoreStats.maxCombo = currentCombo;
 
         comboDisplay.innerText = `${currentCombo}x`;
         comboDisplay.classList.remove('bump');
@@ -482,7 +507,6 @@ function handleInputHit(targetId) {
 
         updateLiveAccuracy();
         triggerJudgmentBurst(match.element, scoreType, burstColor);
-        
         match.element.classList.remove('hit-flash');
     }
 }
@@ -502,7 +526,6 @@ function triggerResultsScreen() {
     if (gameAudio) gameAudio.pause();
 
     const totalNotes = scoreStats.count300 + scoreStats.count100 + scoreStats.count50 + scoreStats.countMiss;
-    
     let accuracy = 100.00;
     if (totalNotes > 0) {
         const totalPointsEarned = (scoreStats.count300 * 300) + (scoreStats.count100 * 100) + (scoreStats.count50 * 50);
@@ -510,9 +533,7 @@ function triggerResultsScreen() {
         accuracy = (totalPointsEarned / maxPossiblePoints) * 100;
     }
 
-    let grade = 'D';
-    let gradeColor = '#f85149';
-
+    let grade = 'D'; let gradeColor = '#f85149';
     if (accuracy === 100) { grade = 'SS'; gradeColor = '#f1c40f'; }
     else if (accuracy >= 95) { grade = 'S'; gradeColor = '#f39c12'; }
     else if (accuracy >= 90) { grade = 'A'; gradeColor = '#2ecc71'; }
@@ -545,7 +566,6 @@ function handlePlayAgainRetry() {
 
     const circleElement = document.getElementById('progressCircle');
     if (circleElement) circleElement.style.display = 'flex';
-    
     lastRenderedPercent = -1; 
 
     setTimeout(() => {
@@ -564,24 +584,17 @@ function handleReturnToHome() {
     document.querySelectorAll('.note-pulse').forEach(p => p.remove());
     document.querySelectorAll('.judgment-burst').forEach(b => b.remove());
 
-    activeTimeline = [];
-    cachedRawNotes = [];
-    mapLoaded = false;
-    isPaused = false;
-
+    activeTimeline = []; cachedRawNotes = []; mapLoaded = false; isPaused = false;
     songTitleDisplay.innerText = "qead // CHOOSE A TRACK";
 
     comboDisplay.style.display = 'none';
     liveAccuracyDisplay.style.display = 'none';
     resultsOverlay.style.display = 'none';
     gameArena.style.display = "none";
-
     songSelectScreen.style.display = "flex";
 
     document.body.style.backgroundImage = "";
-    if (currentBgURL && !currentBgURL.startsWith('http')) {
-        URL.revokeObjectURL(currentBgURL);
-    }
+    if (currentBgURL && !currentBgURL.startsWith('http')) URL.revokeObjectURL(currentBgURL);
     currentBgURL = "";
 
     const percentLabel = document.getElementById('progressPercent');
@@ -591,15 +604,13 @@ function handleReturnToHome() {
         circleElement.style.background = `conic-gradient(#00f2fe 0%, #222 0%)`;
         circleElement.style.display = 'none';
     }
-
     folderInput.value = "";
+    buildSongWheelMenu();
 }
 
 function refreshBackgroundView() {
     if (showArtwork && currentBgURL) {
         document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url(${currentBgURL})`;
-        document.body.style.backgroundSize = "cover";
-        document.body.style.backgroundPosition = "center";
     } else {
         document.body.style.backgroundImage = "";
     }
@@ -614,11 +625,10 @@ if (toggleBgBtn) {
     });
 }
 
-// Keeping local manual .osu folder parses active for testing local exports
 folderInput.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);
-    const osuFile = files.find(f => f.name.endsWith('.osu'));
-    const audioFile = files.find(f => f.name.endsWith('.mp3'));
+    const osuFile = files.find(f => f.name.toLowerCase().endsWith('.osu'));
+    const audioFile = files.find(f => f.name.toLowerCase().endsWith('.mp3') && !f.name.toLowerCase().includes('hitsound'));
 
     if (!osuFile || !audioFile) {
         alert("Missing files! Make sure the folder contains a .osu and a .mp3 file.");
@@ -672,9 +682,9 @@ window.addEventListener('keyup', (e) => {
     if (keyMap[key]) keyMap[key].element.classList.remove('active-press');
 });
 
-const keyMap = getActiveKeyMap();
-Object.keys(keyMap).forEach(key => {
-    const item = keyMap[key];
+const keyMapConfig = getActiveKeyMap();
+Object.keys(keyMapConfig).forEach(key => {
+    const item = keyMapConfig[key];
     let activeTouches = new Set();
 
     item.element.addEventListener('touchstart', (e) => {
@@ -711,13 +721,7 @@ Object.keys(keyMap).forEach(key => {
 pauseBtn.addEventListener('click', togglePause);
 resumeBtn.addEventListener('click', togglePause);
 
-if (retryBtn) {
-    retryBtn.addEventListener('click', handlePlayAgainRetry);
-}
+if (retryBtn) retryBtn.addEventListener('click', handlePlayAgainRetry);
+if (homeBtn) homeBtn.addEventListener('click', handleReturnToHome);
 
-if (homeBtn) {
-    homeBtn.addEventListener('click', handleReturnToHome);
-}
-
-// INITIALIZE RUNTIME TRIGGER: Pull tracks from the cloud on setup load
 fetchTracksFromCloud();
