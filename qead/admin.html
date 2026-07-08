@@ -185,6 +185,18 @@
 
                         rawNotes.sort((a, b) => a.time - b.time);
 
+                        // RESTORED SPAM DENSITY CALCULATION LOOP
+                        const densityThresholdMS = 150;
+                        for (let i = 0; i < rawNotes.length; i++) {
+                            const prev = rawNotes[i - 1];
+                            const next = rawNotes[i + 1];
+                            
+                            if ((prev && (rawNotes[i].time - prev.time <= densityThresholdMS)) || 
+                                (next && (next.time - rawNotes[i].time <= densityThresholdMS))) {
+                                rawNotes[i].isSpamDensity = true;
+                            }
+                        }
+
                         // Calculate dynamic duration string (MM:SS) using the final note timestamp
                         let finalDurationText = "0:00";
                         if (rawNotes.length > 0) {
@@ -206,7 +218,7 @@
                         if (insertErr) throw insertErr;
                     }
 
-                    statusLog.innerText = `✅ Ingestion successful! All [${osuFiles.length}] configurations cataloged online cleanly.`;
+                    statusLog.innerText = `✅ Ingestion successful! All [${osuFiles.length}] configurations cataloged online cleanly with spam-density matrices.`;
                 } catch (err) {
                     console.error(err);
                     statusLog.innerText = `❌ Terminal pipeline breakdown: ${err.message}`;
