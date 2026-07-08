@@ -102,6 +102,15 @@ async function fetchTracksFromCloud() {
             });
         });
 
+        // Loop inside each group and sort them strictly from lowest stars to highest stars
+        Object.values(groups).forEach(group => {
+            group.difficulties.sort((a, b) => {
+                const valA = parseFloat(a.stars) || 0;
+                const valB = parseFloat(b.stars) || 0;
+                return valA - valB;
+            });
+        });
+
         globalSongsPool = Object.values(groups);
         buildSongWheelMenu();
 
@@ -386,7 +395,6 @@ function updateOsuProgressCircle() {
     }
 }
 
-/* RESTORED EXACT BASELINE RHYTHM CLOCK AND SPAWNING WINDOW CONDITIONS */
 function updateEngineClock() {
     if (isPaused || !gameAudio) {
         requestAnimationFrame(updateEngineClock);
@@ -405,6 +413,7 @@ function updateEngineClock() {
 
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
+        const timeRemaining = note.time - currentPlaybackTime;
 
         if (currentPlaybackTime >= note.time - 501 && currentPlaybackTime < note.time && !note.visualTriggered) {
             const el = document.getElementById(note.targetId);
@@ -419,12 +428,12 @@ function updateEngineClock() {
                 pulse.style.boxShadow = '0 0 12px #ffffff, inset 0 0 12px #fff600';
             } else {
                 pulse.style.color = matchingKeyData.color; 
+                }
+                
+                el.appendChild(pulse);
+                note.pulseElement = pulse;
+                note.visualTriggered = true;
             }
-            
-            el.appendChild(pulse);
-            note.pulseElement = pulse;
-            note.visualTriggered = true;
-        }
 
         if (currentPlaybackTime >= note.time && !note.flashed) {
             const el = document.getElementById(note.targetId);
