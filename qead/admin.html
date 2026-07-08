@@ -15,7 +15,6 @@
             flex-direction: column; 
             align-items: center; 
         }
-        /* Hidden by default until password authorization passes */
         #secureContainer {
             display: none;
             flex-direction: column;
@@ -102,7 +101,6 @@
         // =========================================================================
         // --- CLIENT SIDE GATEWAY CHECK ---
         // =========================================================================
-        // Change "your_secret_password" to whatever you want your admin key to be!
         const ADMIN_PASSCODE = "277353"; 
         
         const userInput = prompt("Enter Master Backend Access Password:");
@@ -166,6 +164,7 @@
                     for (let file of osuFiles) {
                         let text = await file.text();
                         let title = "Unknown Track", artist = "Unknown", version = "Normal", rawNotes = [];
+                        let overallDiff = "4.0"; 
                         let isHitObjects = false;
 
                         text.split('\n').forEach(line => {
@@ -173,6 +172,8 @@
                             if (line.startsWith('Title:')) title = line.split(':')[1].trim();
                             if (line.startsWith('Artist:')) artist = line.split(':')[1].trim();
                             if (line.startsWith('Version:')) version = line.split(':')[1].trim();
+                            if (line.startsWith('OverallDifficulty:')) overallDiff = line.split(':')[1].trim();
+                            
                             if (line === '[HitObjects]') { isHitObjects = true; return; }
                             if (isHitObjects && line.includes(',')) {
                                 const parts = line.split(',');
@@ -184,11 +185,20 @@
 
                         rawNotes.sort((a, b) => a.time - b.time);
 
+                        // Calculate dynamic duration string (MM:SS) using the final note timestamp
+                        let finalDurationText = "0:00";
+                        if (rawNotes.length > 0) {
+                            const totalSeconds = Math.floor(rawNotes[rawNotes.length - 1].time / 1000);
+                            const minutes = Math.floor(totalSeconds / 60);
+                            const seconds = totalSeconds % 60;
+                            finalDurationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        }
+
                         const { error: insertErr } = await supabaseClient.from('songs').insert([{
                             title: `${title} [${version}]`,
                             artist: artist, 
-                            stars: "4.2★",
-                            duration_text: "3:30",
+                            stars: `${overallDiff}★`,
+                            duration_text: finalDurationText,
                             audio_url: liveAudioURL,
                             bg_url: liveBgURL,
                             osu_notes: rawNotes
