@@ -649,10 +649,12 @@ body::before {
         height: calc(100vh - 70px);
     }
 
+    /* FIXED PARENT HEIGHT OVERRIDES: Lets the dashboard stretch cleanly to accommodate the scroll zone */
     .song-select-dashboard {
         flex-direction: column;
-        height: 100%;
-        gap: 15px;
+        height: calc(100vh - 90px); 
+        max-height: calc(100vh - 90px);
+        gap: 12px;
     }
 
     .menu-preview-panel {
@@ -689,11 +691,12 @@ body::before {
         display: none !important;
     }
 
-    /* FIXES SCROLL LOCK: Overrides touch boundaries to allow native fluid mobile scrolling */
+    /* FIXED DISPLAY CONTAINER BOUNDS: Allows touch scrolling to take full priority over parent layers */
     .song-wheel {
         flex: 1;
         padding-right: 0px;
         overflow-y: scroll !important;
+        overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
     }
 
