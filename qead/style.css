@@ -302,7 +302,7 @@ body::before {
 }
 .compact-upload-zone:hover { background: rgba(255,255,255,0.12); }
 
-/* Right Panel: Scrollable Song Wheel stack */
+/* Scrollable Track Wheel Stack */
 .song-wheel {
     flex: 1.2;
     overflow-y: auto;
@@ -317,7 +317,6 @@ body::before {
 .song-wheel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 .song-wheel::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 254, 0.4); }
 
-/* Individual Song Cards & Accordion Wrappers */
 .song-group-container {
     display: flex;
     flex-direction: column;
@@ -427,9 +426,7 @@ body::before {
     margin-top: 2px;
 }
 
-/* =======================================================
-    SEARCH BAR & META METRIC BADGE EXTENSIONS
-   ======================================================= */
+/* Metadata Configuration Badges */
 .menu-search-bar {
     width: 100%;
     background: rgba(255, 255, 255, 0.02);
@@ -449,37 +446,13 @@ body::before {
     box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
 }
 
-.card-meta-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.meta-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 900;
-    font-family: monospace;
-    letter-spacing: 0.5px;
-}
-
+.card-meta-row { display: flex; gap: 10px; margin-top: 10px; }
+.meta-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 900; font-family: monospace; letter-spacing: 0.5px; }
 .meta-badge.count { background: rgba(255, 255, 255, 0.05); color: #aaa; border: 1px solid rgba(255,255,255,0.08); }
-.meta-badge.difficulty {
-    background: rgba(255, 46, 126, 0.15);
-    color: #ff2e7e;
-    border: 1px solid rgba(255, 46, 126, 0.2);
-}
+.meta-badge.difficulty { background: rgba(255, 46, 126, 0.15); color: #ff2e7e; border: 1px solid rgba(255, 46, 126, 0.2); }
+.meta-badge.duration { background: rgba(0, 242, 254, 0.15); color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.2); }
 
-.meta-badge.duration {
-    background: rgba(0, 242, 254, 0.15);
-    color: #00f2fe;
-    border: 1px solid rgba(0, 242, 254, 0.2);
-}
-
-/* ======================================================= */
-
-/* Arena Alignment Frame Wrapper */
+/* Arena Core Framework Alignment */
 .arena-wrapper {
     position: relative;
     width: 85vw;
@@ -627,10 +600,11 @@ body::before {
    ======================================================= */
 @media only screen and (max-width: 768px) {
     body {
-        overflow-y: scroll !important;
+        overflow-y: auto !important;
         height: auto;
     }
 
+    /* Fixed Core Graphics Mask Plane: Fixes mobile background dropout on scroll */
     body::after {
         content: '';
         position: fixed;
@@ -642,33 +616,15 @@ body::before {
         pointer-events: none;
     }
 
-    .hud {
-        padding: 0 12px;
-        height: 70px;
-    }
-
-    /* Fixed the song title scale size so it never spills down */
+    /* ONLY CHANGES THE SIZE OF THE TEXT FOR THE SONG NAME IN THE HUD UP TOP */
     .song-title {
-        font-size: 0.85rem !important;
-        line-height: 1.3;
-        max-width: 180px;
-        margin: 0 auto;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        word-break: break-word;
-    }
-
-    .hud-btn {
-        padding: 8px 12px;
-        font-size: 0.8rem;
+        font-size: 0.75rem !important;
     }
 
     .game-container {
         padding: 10px;
-        height: calc(100vh - 70px);
+        height: auto;
+        min-height: calc(100vh - 70px);
     }
 
     .song-select-dashboard {
@@ -680,14 +636,14 @@ body::before {
         padding-bottom: 40px;
     }
 
-    /* Fixed sticky layout spacing parameters */
+    /* Sticky Dashboard Panel: Standardizes input layers clearly under the header */
     .menu-preview-panel {
         flex: none;
         height: auto;
         padding: 15px;
         border-radius: 16px;
         position: sticky; 
-        top: 80px; /* Aligns comfortably straight below the header bar */
+        top: 75px;
         z-index: 50;
         background: rgba(12, 12, 18, 0.96);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -715,28 +671,24 @@ body::before {
         font-size: 1.05rem;
     }
 
-    /* RESTORED AND ENABLED LOCAL FILE IMPORT CHANNELS FOR PHONE STORAGE */
-    .upload-zone {
-        display: block !important;
-        margin-bottom: 10px;
-        padding: 12px;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .upload-btn {
-        width: 100%;
-        padding: 10px;
-        font-size: 0.9rem;
-    }
-
+    /* RESTORED & FORMATED MOBILE COMPACT FILE DROPZONE CHANNELS */
     .compact-upload-zone {
-        display: none !important;
+        display: inline-block !important;
+        width: 100%;
+        text-align: center;
+        background: rgba(31, 111, 235, 0.15);
+        border: 1px solid rgba(31, 111, 235, 0.4);
+        color: #388bfd;
+        padding: 10px;
+        font-size: 0.85rem;
+        border-radius: 8px;
     }
     
     .menu-preview-panel p[style*="color: #666"] {
         display: none !important;
     }
 
+    /* Unified Native Vertical List Generation */
     .song-wheel {
         flex: none;
         height: auto;
