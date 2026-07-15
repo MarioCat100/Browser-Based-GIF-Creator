@@ -500,33 +500,20 @@ function updateEngineClock() {
 
     updateOsuProgressCircle();
 
-    // --- 100x COMBO SCREEN BORDER BEAT PULSE MATRIX ---
+    // --- MUSE DASH INSPIRED STATIC FEVER MODE ENGINE ---
     const borderOverlay = document.getElementById('comboBorderOverlay');
     if (borderOverlay) {
-        if (currentCombo >= 100 && gameAudio) {
-            borderOverlay.classList.add('active');
-
-            // Standard 130 BPM fallback structure (approx. 461.5ms per beat window)
-            // Shifting by 3000ms accounts for your map start count down delay!
-            const songBPM = 130; 
-            const msPerBeat = 60000 / songBPM;
-            const currentBeat = Math.floor((currentPlaybackTime - 3000) / msPerBeat);
-
-            if (currentBeat > lastBeatCount && currentPlaybackTime >= 3000) {
-                lastBeatCount = currentBeat;
-
-                // Grab a random accent color from your 4 foundational grid boxes!
+        if (currentCombo >= 100) {
+            // If it isn't active yet, turn it on and lock in a random base color from your grid!
+            if (!borderOverlay.classList.contains('active')) {
                 const zoneColors = ['#00f2fe', '#ff2e7e', '#ba49ff', '#00ff88'];
                 const randomColor = zoneColors[Math.floor(Math.random() * zoneColors.length)];
                 
                 borderOverlay.style.color = randomColor;
-                borderOverlay.classList.add('pulse-flash');
-
-                // Clear the punchy highlight frame slightly after impact
-                setTimeout(() => borderOverlay.classList.remove('pulse-flash'), 80);
+                borderOverlay.classList.add('active');
             }
         } else {
-            borderOverlay.classList.remove('active', 'pulse-flash');
+            borderOverlay.classList.remove('active');
             borderOverlay.style.color = 'transparent';
         }
     }
