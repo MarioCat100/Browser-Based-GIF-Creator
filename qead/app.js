@@ -146,7 +146,7 @@ function playMissSound() {
     const gainNode = audioCtx.createGain();
 
     source.buffer = missSoundBuffer;
-    gainNode.gain.value = 0.8; // Scale volume to 60% now 80%
+    gainNode.gain.value = 0.9; // Scale volume to 60% now 90%
 
     source.connect(gainNode);
     gainNode.connect(audioCtx.destination);
