@@ -100,7 +100,7 @@ function playHitSound() {
     const gainNode = audioCtx.createGain();
 
     source.buffer = hitSoundBuffer;
-    gainNode.gain.value = 0.5; // Scale volume to 50% to prevent distortion
+    gainNode.gain.value = 0.8; // Scale volume to 50% to prevent distortion, 80% now
 
     // Connect source -> volume slider -> audio device output
     source.connect(gainNode);
