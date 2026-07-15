@@ -70,7 +70,8 @@
         <div class="pause-menu">
             <div class="menu-title">// PAUSED</div>
             <button class="menu-btn btn-continue" id="resumeBtn">CONTINUE</button>
-            <button class="menu-btn btn-retry" onclick="location.reload()">RETRY</button>
+            <!-- REMOVED location.reload() and added unique id for app.js integration -->
+            <button class="menu-btn btn-retry" id="pauseRetryBtn">RETRY</button>
             <button class="menu-btn btn-quit" onclick="location.reload()">QUIT TO MENU</button>
         </div>
     </div>
@@ -97,6 +98,7 @@
             </div>
 
             <div class="results-footer" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                <!-- Changed ID here so it can be targeted specifically in your JS to trigger direct resets -->
                 <button class="menu-btn btn-retry" id="playAgainBtn">PLAY AGAIN</button>
                 <button class="menu-btn btn-continue" id="homeBtn">HOME</button>
             </div>
