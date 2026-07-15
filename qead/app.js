@@ -25,6 +25,7 @@ let cachedRawNotes = [];
 let lastRenderedPercent = -1;
 let showArtwork = localStorage.getItem('showArtwork') !== 'false';
 let currentBgURL = "";
+let lastBeatCount = -1; // Tracks audio timeline milestones to lock frame drops
 
 // DOM ELEMENT SELECTORS
 const pauseOverlay = document.getElementById('pauseOverlay');
@@ -449,6 +450,7 @@ function startGameLoop(parsedNotes) {
     activeTimeline = parsedNotes;
     nextNoteIndex = 0;
     currentCombo = 0;
+    lastBeatCount = -1;
     
     scoreStats.count300 = 0; scoreStats.count100 = 0; scoreStats.count50 = 0; scoreStats.countMiss = 0; scoreStats.maxCombo = 0;
     
@@ -497,6 +499,37 @@ function updateEngineClock() {
     }
 
     updateOsuProgressCircle();
+
+    // --- 100x COMBO SCREEN BORDER BEAT PULSE MATRIX ---
+    const borderOverlay = document.getElementById('comboBorderOverlay');
+    if (borderOverlay) {
+        if (currentCombo >= 100 && gameAudio) {
+            borderOverlay.classList.add('active');
+
+            // Standard 130 BPM fallback structure (approx. 461.5ms per beat window)
+            // Shifting by 3000ms accounts for your map start count down delay!
+            const songBPM = 130; 
+            const msPerBeat = 60000 / songBPM;
+            const currentBeat = Math.floor((currentPlaybackTime - 3000) / msPerBeat);
+
+            if (currentBeat > lastBeatCount && currentPlaybackTime >= 3000) {
+                lastBeatCount = currentBeat;
+
+                // Grab a random accent color from your 4 foundational grid boxes!
+                const zoneColors = ['#00f2fe', '#ff2e7e', '#ba49ff', '#00ff88'];
+                const randomColor = zoneColors[Math.floor(Math.random() * zoneColors.length)];
+                
+                borderOverlay.style.color = randomColor;
+                borderOverlay.classList.add('pulse-flash');
+
+                // Clear the punchy highlight frame slightly after impact
+                setTimeout(() => borderOverlay.classList.remove('pulse-flash'), 80);
+            }
+        } else {
+            borderOverlay.classList.remove('active', 'pulse-flash');
+            borderOverlay.style.color = 'transparent';
+        }
+    }
 
     for (let i = nextNoteIndex; i < activeTimeline.length; i++) {
         const note = activeTimeline[i];
@@ -664,6 +697,7 @@ function handlePlayAgainRetry() {
     const circleElement = document.getElementById('progressCircle');
     if (circleElement) circleElement.style.display = 'flex';
     lastRenderedPercent = -1; 
+    lastBeatCount = -1;
 
     setTimeout(() => {
         gameAudio.play();
@@ -682,6 +716,7 @@ function handleReturnToHome() {
     document.querySelectorAll('.judgment-burst').forEach(b => b.remove());
 
     activeTimeline = []; cachedRawNotes = []; mapLoaded = false; isPaused = false;
+    lastBeatCount = -1;
     songTitleDisplay.innerText = "qead // CHOOSE A TRACK";
 
     comboDisplay.style.display = 'none';
