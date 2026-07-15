@@ -6,6 +6,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_x3p7Va4Unp2ldSNBH8VWRw_4wQQGc1g";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Load saved volume levels from browser storage, defaulting to 0.8 (80%)
+let hitSoundVolume = parseFloat(localStorage.getItem('hitSoundVolume')) ?? 0.8;
+let missSoundVolume = parseFloat(localStorage.getItem('missSoundVolume')) ?? 0.8;
+
 let globalSongsPool = []; // Holds structured song sets: { masterTitle, artist, difficulties: [...] }
 let activeSelectedTrack = null;
 let isPaused = false;
@@ -115,7 +119,7 @@ function playHitSound() {
     const gainNode = audioCtx.createGain();
 
     source.buffer = hitSoundBuffer;
-    gainNode.gain.value = 0.8; // Keeps your punchy volume!
+    gainNode.gain.value = hitSoundVolume; // Connected to settings slider!
 
     // Connect source -> volume slider -> audio device output
     source.connect(gainNode);
@@ -146,7 +150,7 @@ function playMissSound() {
     const gainNode = audioCtx.createGain();
 
     source.buffer = missSoundBuffer;
-    gainNode.gain.value = 0.9; // Scale volume to 60% now 90%
+    gainNode.gain.value = missSoundVolume; // Connected to settings slider!
 
     source.connect(gainNode);
     gainNode.connect(audioCtx.destination);
@@ -814,5 +818,60 @@ resumeBtn.addEventListener('click', togglePause);
 if (retryBtn) retryBtn.addEventListener('click', handlePlayAgainRetry);
 if (pauseRetryBtn) pauseRetryBtn.addEventListener('click', handlePlayAgainRetry); // BIND PAUSE RETRY TO IN-MEMORY MAP RESET
 if (homeBtn) homeBtn.addEventListener('click', handleReturnToHome);
+
+/**
+ * Initializes the slide-out settings panel and links volume inputs to the game engine.
+ */
+function initSettingsSidebar() {
+    const sidebar = document.getElementById('settingsSidebar');
+    const openBtn = document.getElementById('settingsOpenBtn');
+    const closeBtn = document.getElementById('settingsCloseBtn');
+    
+    const hitSlider = document.getElementById('hitSoundVolSlider');
+    const hitValText = document.getElementById('hitSoundVolValue');
+    const missSlider = document.getElementById('missSoundVolSlider');
+    const missValText = document.getElementById('missSoundVolValue');
+
+    if (!sidebar || !openBtn || !closeBtn) return;
+
+    // 1. Apply saved/default volumes to the UI sliders on load
+    hitSlider.value = hitSoundVolume;
+    hitValText.textContent = Math.round(hitSoundVolume * 100) + "%";
+    
+    missSlider.value = missSoundVolume;
+    missValText.textContent = Math.round(missSoundVolume * 100) + "%";
+
+    // 2. Sidebar open & close event listeners
+    openBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+    });
+
+    closeBtn.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+    });
+
+    // Close sidebar if the user clicks anywhere outside of it
+    document.addEventListener('click', (event) => {
+        if (!sidebar.contains(event.target) && event.target !== openBtn && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // 3. Update volume levels and save to LocalStorage when sliders move
+    hitSlider.addEventListener('input', (e) => {
+        hitSoundVolume = parseFloat(e.target.value);
+        hitValText.textContent = Math.round(hitSoundVolume * 100) + "%";
+        localStorage.setItem('hitSoundVolume', hitSoundVolume);
+    });
+
+    missSlider.addEventListener('input', (e) => {
+        missSoundVolume = parseFloat(e.target.value);
+        missValText.textContent = Math.round(missSoundVolume * 100) + "%";
+        localStorage.setItem('missSoundVolume', missSoundVolume);
+    });
+}
+
+// Automatically start the sidebar listener
+document.addEventListener('DOMContentLoaded', initSettingsSidebar);
 
 fetchTracksFromCloud();
