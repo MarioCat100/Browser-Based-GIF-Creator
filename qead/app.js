@@ -85,7 +85,7 @@ async function loadSoundToRAM(filePath) {
  */
 async function initRhythmAudioEngine() {
     hitSoundBuffer = await loadSoundToRAM('soft-hitnormal.wav');
-    missSoundBuffer = await loadSoundToRAM('combobreak.mp3');
+    missSoundBuffer = await loadSoundToRAM('combobreak.wav');
     console.log("⚡ High-performance audio engine loaded successfully!");
 }
 
