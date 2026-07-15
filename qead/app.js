@@ -62,6 +62,10 @@ const audioCtx = new AudioContext();
 let hitSoundBuffer = null;
 let missSoundBuffer = null;
 
+// HIGH-PERFORMANCE AUDIO NODE POOL VARIABLES
+const MAX_VOICES = 32;
+const activeVoices = [];
+
 /**
  * Grabs an audio file, converts it to an array buffer, and decodes it straight to RAM.
  */
@@ -95,18 +99,33 @@ function playHitSound() {
     }
     if (!hitSoundBuffer) return;
 
+    // Clean up finished voices from our tracker pool to prevent sound drops
+    while (activeVoices.length >= MAX_VOICES) {
+        const oldestVoice = activeVoices.shift();
+        try { oldestVoice.stop(); } catch(e) {}
+    }
+
     // Build temporary memory nodes
     const source = audioCtx.createBufferSource();
     const gainNode = audioCtx.createGain();
 
     source.buffer = hitSoundBuffer;
-    gainNode.gain.value = 0.8; // Scale volume to 50% to prevent distortion, 80% now
+    gainNode.gain.value = 0.8; // Keeps your punchy volume!
 
     // Connect source -> volume slider -> audio device output
     source.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     
+    // Track this active voice so we can manage channel limits
+    activeVoices.push(source);
+    
     source.start(0); // Trigger instantly!
+
+    // Remove from active pool when finished playing
+    source.onended = () => {
+        const index = activeVoices.indexOf(source);
+        if (index > -1) activeVoices.splice(index, 1);
+    };
 }
 
 function playMissSound() {
