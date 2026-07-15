@@ -847,16 +847,19 @@ function initSettingsSidebar() {
     // 2. Sidebar open & close event listeners
     openBtn.addEventListener('click', () => {
         sidebar.classList.add('open');
+        openBtn.classList.add('hidden'); // Smoothly hide the button
     });
 
     closeBtn.addEventListener('click', () => {
         sidebar.classList.remove('open');
+        openBtn.classList.remove('hidden'); // Bring the button back
     });
 
     // Close sidebar if the user clicks anywhere outside of it
     document.addEventListener('click', (event) => {
         if (!sidebar.contains(event.target) && event.target !== openBtn && sidebar.classList.contains('open')) {
             sidebar.classList.remove('open');
+            openBtn.classList.remove('hidden'); // Bring the button back
         }
     });
 
