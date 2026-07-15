@@ -529,7 +529,7 @@ function updateEngineClock() {
         if (currentPlaybackTime > note.time + missBoundary && !note.hit && !note.missed) {
             note.missed = true;
             if (note.pulseElement) note.pulseElement.remove();
-            if (currentCombo >= 5) playMissSound();
+            if (currentCombo >= 20) playMissSound();
 
             scoreStats.countMiss++;
             currentCombo = 0;
