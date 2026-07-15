@@ -850,3 +850,9 @@ body::before {
     text-align: right;
     font-weight: bold;
 }
+
+.settings-trigger-btn.hidden {
+    opacity: 0;
+    pointer-events: none; /* Prevents clicking the invisible button */
+    transform: translateX(-50px); /* Smoothly slides it left out of view */
+}
