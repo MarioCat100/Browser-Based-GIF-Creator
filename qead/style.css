@@ -856,3 +856,31 @@ body::before {
     pointer-events: none; /* Prevents clicking the invisible button */
     transform: translateX(-50px); /* Smoothly slides it left out of view */
 }
+
+/* =======================================================
+   --- COMBOMILESTONE 100x SCREEN BORDER GLOW ---
+   ======================================================= */
+.combo-border-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Allows clicks to pass straight through */
+    z-index: 998; /* Right underneath the settings sidebar menu */
+    box-shadow: inset 0 0 0px transparent;
+    opacity: 0;
+    transition: box-shadow 0.1s ease-out, opacity 0.1s ease-out;
+}
+
+/* Active god-mode class that triggers the reactive pulsing properties */
+.combo-border-overlay.active {
+    opacity: 1;
+    box-shadow: inset 0 0 30px currentColor;
+}
+
+/* Instant flash class triggered dynamically on the downbeat */
+.combo-border-overlay.pulse-flash {
+    box-shadow: inset 0 0 60px currentColor;
+    transition: none !important; /* SNAPS out instantly to pulse hard */
+}
