@@ -9,6 +9,40 @@
 </head>
 <body>
 
+    <!-- =========================================================================
+         --- SLIDE-OUT SETTINGS SIDEBAR MENU ---
+         ========================================================================= -->
+    <button id="settingsOpenBtn" class="settings-trigger-btn">⚙ SETTINGS</button>
+
+    <div id="settingsSidebar" class="settings-sidebar">
+        <div class="sidebar-header">
+            <h2>GAME SETTINGS</h2>
+            <button id="settingsCloseBtn" class="sidebar-close-btn">×</button>
+        </div>
+        
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-section">
+            <h3>AUDIO MIXER</h3>
+            
+            <div class="setting-row">
+                <label for="hitSoundVolSlider">HIT SOUND VOLUME</label>
+                <div class="slider-container">
+                    <input type="range" id="hitSoundVolSlider" min="0" max="1" step="0.05" value="0.8">
+                    <span id="hitSoundVolValue">80%</span>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <label for="missSoundVolSlider">COMBO BREAK VOLUME</label>
+                <div class="slider-container">
+                    <input type="range" id="missSoundVolSlider" min="0" max="1" step="0.05" value="0.8">
+                    <span id="missSoundVolValue">80%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <header class="hud">
         <button class="hud-btn mobile-only" id="backBtn" onclick="location.reload()">◀ QUIT</button>
         <div class="song-info">
