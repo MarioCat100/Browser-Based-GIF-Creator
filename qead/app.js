@@ -29,6 +29,7 @@ const songTitleDisplay = document.getElementById('songTitle');
 const folderInput = document.getElementById('folderInput');
 const resultsOverlay = document.getElementById('resultsOverlay');
 const retryBtn = document.getElementById('retryBtn') || document.getElementById('playAgainBtn');
+const pauseRetryBtn = document.getElementById('pauseRetryBtn'); // TARGETED PAUSE MENU RETRY ELEMENT
 const homeBtn = document.getElementById('homeBtn');
 const toggleBgBtn = document.getElementById('toggleBgBtn'); 
 
@@ -569,6 +570,7 @@ function handlePlayAgainRetry() {
     document.querySelectorAll('.note-pulse').forEach(p => p.remove());
     document.querySelectorAll('.judgment-burst').forEach(b => b.remove());
     resultsOverlay.style.display = 'none';
+    pauseOverlay.style.display = 'none'; // Ensure the pause overlay is dismissed if retrying from pause screen
 
     gameAudio.currentTime = 0;
     const freshTimelineCopy = JSON.parse(cachedRawNotes);
@@ -731,6 +733,7 @@ pauseBtn.addEventListener('click', togglePause);
 resumeBtn.addEventListener('click', togglePause);
 
 if (retryBtn) retryBtn.addEventListener('click', handlePlayAgainRetry);
+if (pauseRetryBtn) pauseRetryBtn.addEventListener('click', handlePlayAgainRetry); // BIND PAUSE RETRY TO IN-MEMORY MAP RESET
 if (homeBtn) homeBtn.addEventListener('click', handleReturnToHome);
 
 fetchTracksFromCloud();
