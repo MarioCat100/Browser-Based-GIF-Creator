@@ -7,8 +7,11 @@ const SUPABASE_ANON_KEY = "sb_publishable_x3p7Va4Unp2ldSNBH8VWRw_4wQQGc1g";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Load saved volume levels from browser storage, defaulting to 0.8 (80%)
-let hitSoundVolume = parseFloat(localStorage.getItem('hitSoundVolume')) ?? 0.8;
-let missSoundVolume = parseFloat(localStorage.getItem('missSoundVolume')) ?? 0.8;
+let hitSoundVolume = parseFloat(localStorage.getItem('hitSoundVolume'));
+if (isNaN(hitSoundVolume)) hitSoundVolume = 0.8;
+
+let missSoundVolume = parseFloat(localStorage.getItem('missSoundVolume'));
+if (isNaN(missSoundVolume)) missSoundVolume = 0.8;
 
 let globalSongsPool = []; // Holds structured song sets: { masterTitle, artist, difficulties: [...] }
 let activeSelectedTrack = null;
