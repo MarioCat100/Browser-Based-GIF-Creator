@@ -63,7 +63,7 @@ let hitSoundBuffer = null;
 let missSoundBuffer = null;
 
 // HIGH-PERFORMANCE AUDIO NODE POOL VARIABLES
-const MAX_VOICES = 32;
+const MAX_VOICES = 12; // Capped at the 12 hardware-channel sweet spot to prevent browser dropping
 const activeVoices = [];
 
 /**
@@ -99,10 +99,15 @@ function playHitSound() {
     }
     if (!hitSoundBuffer) return;
 
-    // Clean up finished voices from our tracker pool to prevent sound drops
+    // VOICE STEALING: Force-stop the oldest active sound node to instantly free up a channel
     while (activeVoices.length >= MAX_VOICES) {
         const oldestVoice = activeVoices.shift();
-        try { oldestVoice.stop(); } catch(e) {}
+        try { 
+            oldestVoice.stop(); // Stops the audio node instantly
+            oldestVoice.disconnect(); // Detaches it from the output to free RAM
+        } catch(e) {
+            // Ignore errors if the sound had already naturally ended
+        }
     }
 
     // Build temporary memory nodes
@@ -124,7 +129,10 @@ function playHitSound() {
     // Remove from active pool when finished playing
     source.onended = () => {
         const index = activeVoices.indexOf(source);
-        if (index > -1) activeVoices.splice(index, 1);
+        if (index > -1) {
+            activeVoices.splice(index, 1);
+            source.disconnect(); // Clean up connections to prevent memory leaks
+        }
     };
 }
 
