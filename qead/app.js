@@ -54,6 +54,80 @@ const getActiveKeyMap = () => ({
 });
 
 // =========================================================================
+// --- ZERO-LATENCY WEB AUDIO API STORAGE ENGINE ---
+// =========================================================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+let hitSoundBuffer = null;
+let missSoundBuffer = null;
+
+/**
+ * Grabs an audio file, converts it to an array buffer, and decodes it straight to RAM.
+ */
+async function loadSoundToRAM(filePath) {
+    try {
+        const response = await fetch(filePath);
+        const arrayBuffer = await response.arrayBuffer();
+        return await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (err) {
+        console.warn(`Could not load sound effect at ${filePath}. Playing silent fallback.`, err);
+        return null;
+    }
+}
+
+/**
+ * Bootstraps the Web Audio buffers on startup.
+ */
+async function initRhythmAudioEngine() {
+    hitSoundBuffer = await loadSoundToRAM('soft-hitnormal.wav');
+    missSoundBuffer = await loadSoundToRAM('combobreak.mp3');
+    console.log("⚡ High-performance audio engine loaded successfully!");
+}
+
+// Kick off asset caching
+initRhythmAudioEngine();
+
+function playHitSound() {
+    // Unblock the browser audio thread if paused/idle
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    if (!hitSoundBuffer) return;
+
+    // Build temporary memory nodes
+    const source = audioCtx.createBufferSource();
+    const gainNode = audioCtx.createGain();
+
+    source.buffer = hitSoundBuffer;
+    gainNode.gain.value = 0.5; // Scale volume to 50% to prevent distortion
+
+    // Connect source -> volume slider -> audio device output
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    source.start(0); // Trigger instantly!
+}
+
+function playMissSound() {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    if (!missSoundBuffer) return;
+
+    const source = audioCtx.createBufferSource();
+    const gainNode = audioCtx.createGain();
+
+    source.buffer = missSoundBuffer;
+    gainNode.gain.value = 0.6; // Scale volume to 60%
+
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    source.start(0);
+}
+
+// =========================================================================
 // --- ASYNCHRONOUS DATABASE FETCH GATEWAY ---
 // =========================================================================
 async function fetchTracksFromCloud() {
@@ -241,28 +315,6 @@ if (menuPlayBtn) {
             }, 3000); 
         }, { once: true });
     });
-}
-
-const hitSoundFile = new Audio('soft-hitnormal.wav'); 
-hitSoundFile.preload = 'auto';
-
-function playHitSound() {
-    const soundClone = hitSoundFile.cloneNode();
-    soundClone.volume = 0.5;
-    soundClone.play().catch(err => console.log("Audio pipeline muted: ", err));
-}
-
-const missSoundFile = new Audio('combobreak.mp3'); 
-missSoundFile.preload = 'auto';
-
-function playMissSound() {
-    const soundClone = missSoundFile.cloneNode();
-    soundClone.volume = 0.6; 
-    soundClone.play().catch(err => console.log("Miss clip blocked: ", err));
-}
-
-if (toggleBgBtn) {
-    toggleBgBtn.innerText = showArtwork ? "ARTWORK: ON" : "ARTWORK: OFF";
 }
 
 function togglePause() {
