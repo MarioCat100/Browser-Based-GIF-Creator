@@ -297,7 +297,7 @@ function draw() {
     
     // --- SPEED ACCELERATION WITH A HARD CAP ---
     // Ramps up rapidly like your original code, but caps alpha at 6.0 so it stays humanly possible
-    alpha = min(frameCount / 160, 7.0); 
+    alpha = min(frameCount / 100, 11.0); 
 
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
