@@ -163,8 +163,6 @@ function setup() {
     playMenuPreview();
 }
 
-
-
 // --- ADD THIS TO THE BOTTOM OF YOUR SCRIPT ---
 function togglePractice() {
     isPracticeMode = !isPracticeMode;
@@ -189,7 +187,7 @@ function loadAndStart() {
 }
 
 function startGame() {
-    tiles = []; score = 0; speed = 6; frameCount = 0; gameState = "PLAYING";
+    tiles = []; score = 0; speed = 9; frameCount = 0; gameState = "PLAYING";
     tiles.push(new Tile(floor(random(4))));
     mySound.play();
 }
@@ -295,7 +293,8 @@ function draw() {
         background(255);
     }
     
-    alpha = min(frameCount / 200, 11.0);
+    // --- PIANO TILES 1 ARCADE SPEED CURVE & HARD CAP ---
+    alpha = min(frameCount / 100, 11.0);
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
@@ -303,8 +302,8 @@ function draw() {
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
-    // --- 5. TILES (With Pro Multiplier) ---
-    let proMultiplier = isProMode ? 1.8 : 1.0; 
+    // --- 5. TILES (With Pro Multiplier tuned for Arcade Faster Mode) ---
+    let proMultiplier = isProMode ? 1.35 : 1.0; 
 
     for (let i = tiles.length - 1; i >= 0; i--) {
         let t = tiles[i];
@@ -409,33 +408,24 @@ function checkHit(lane) {
     let t = tiles[0]; 
     
     if (t && t.lane === lane) {
-        // --- MERCY BUFFER: Adds 20px of invisible "hit zone" ---
-        let buffer = 20; 
-        let isTouching = (controlMode === "KEYBOARD") || (mouseY >= t.y - buffer && mouseY <= t.y + t.h + buffer);
+        if (t.y > -t.h && t.y < height) {
+            let distFromBottom = abs(height - (t.y + t.h));
+            let multiplier = floor(combo / 10) + 1; 
 
-        if (isTouching) {
-            if (t.y + t.h > 100) {
-                let distFromBottom = abs(height - (t.y + t.h));
-                let multiplier = floor(combo / 10) + 1; 
-
-                if (distFromBottom < 60) { 
-                    score += (2 * multiplier); 
-                    combo++; 
-                    showFeedback("PERFECT x" + multiplier, "#f1c40f"); 
-                } else {
-                    score += (1 * multiplier);
-                    combo++; 
-                    showFeedback("GOOD x" + multiplier, "#2ecc71"); 
-                }
-                tiles.splice(0, 1);
+            if (distFromBottom < 120) { 
+                score += (2 * multiplier); 
+                combo++; 
+                showFeedback("PERFECT x" + multiplier, "#f1c40f"); 
             } else {
-                combo = 0; 
-                score = max(0, score - 5); 
-                showFeedback("TOO EARLY!", "#e74c3c"); 
+                score += (1 * multiplier);
+                combo++; 
+                showFeedback("GOOD x" + multiplier, "#2ecc71"); 
             }
+            tiles.splice(0, 1);
         } else {
             combo = 0; 
-            triggerGameOver();
+            score = max(0, score - 5); 
+            showFeedback("TOO EARLY!", "#e74c3c"); 
         }
     } else {
         combo = 0; 
