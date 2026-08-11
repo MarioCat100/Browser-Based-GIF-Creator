@@ -111,7 +111,6 @@ function setup() {
     
     const home = document.getElementById('home-screen');
     
-    // We'll use your existing 'canContinue' variable here
  home.innerHTML = `
         <h1 id="menu-title" style="letter-spacing: 8px; margin-top: 40px; margin-bottom: 25px; font-size: 45px; transition: color 0.4s ease, transform 0.1s ease; font-weight: 900; text-transform: uppercase;">
             GOATED TILES
@@ -161,11 +160,6 @@ function setup() {
 
     amp = new p5.Amplitude();
     playMenuPreview();
-}
-
-function togglePractice() {
-    isPracticeMode = !isPracticeMode;
-    setup(); 
 }
 
 function loadAndStart() {
@@ -224,7 +218,6 @@ class Tile {
     }
 }
 
-// Visual effect for tapped tiles (fades out smoothly)
 class HitEffect {
     constructor(x, y, w, h) {
         this.x = x;
@@ -299,22 +292,20 @@ function draw() {
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    // --- 4. FULL GRID SYSTEM (Vertical & Horizontal Lines) ---
+    // --- 4. GRID LINES ---
     stroke(220);
     strokeWeight(1.5);
     
-    // Vertical Lane Dividers
     for (let i = 1; i < 4; i++) {
         line(i * width/4, 0, i * width/4, height);
     }
     
-    // Horizontal Row Dividers (Creates the Piano Tiles grid pattern)
     let rowHeight = height / 5;
     for (let j = 0; j <= height; j += rowHeight) {
         line(0, j, width, j);
     }
 
-    // --- DRAW HIT EFFECTS (Tile Tap Flash) ---
+    // --- DRAW HIT EFFECTS ---
     for (let i = hitEffects.length - 1; i >= 0; i--) {
         let fx = hitEffects[i];
         fx.update();
@@ -443,9 +434,7 @@ function checkHit(lane) {
                 showFeedback("GOOD x" + multiplier, "#2ecc71"); 
             }
 
-            // Spawn a flash effect at the tile's exact hit position before deleting it
             hitEffects.push(new HitEffect(t.x, t.y, t.w, t.h));
-
             tiles.splice(0, 1);
         } else {
             combo = 0; 
@@ -575,7 +564,6 @@ function playMenuPreview() {
 
     let randomSong = random(mySongs);
     
-    previewSound = loadLoad(randomSong.url, () => {});
     previewSound = loadSound(randomSong.url, () => {
         if (gameState === "MENU") {
             previewSound.play();
