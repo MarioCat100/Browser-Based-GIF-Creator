@@ -85,7 +85,7 @@ let feedbackText = "";
 let feedbackColor = "#fff";
 let feedbackTimer = 0;    
 let mySound, amp, tiles = [], score = 0, gameState = "MENU";
-let currentSongUrl = "6", speed = , alpha = 0;
+let currentSongUrl = "", speed = 6, alpha = 0;
 
 const mySongs = [
     { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] }, // Soft Pink
@@ -288,17 +288,14 @@ function draw() {
         let b = currentPulseColor[2];
 
         let pR = map(vol, 0, 0.3, 255, r);
-        let pG = map(vol, 0, 0.3, 255, b);
+        let pG = map(vol, 0, 0.3, 255, g);
         let pB = map(vol, 0, 0.3, 255, b);
         background(pR, pG, pB);
     } else {
         background(255);
     }
     
-    // --- SPEED ACCELERATION WITH A HARD CAP ---
-    // Ramps up rapidly like your original code, but caps alpha at 6.0 so it stays humanly possible
-    alpha = min(frameCount / 100, 9.5); 
-
+    alpha = frameCount / 200; 
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
