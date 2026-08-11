@@ -11,11 +11,11 @@
     /* 1. BODY & BACKGROUND */
     body { 
         margin: 0; padding: 0; overflow: hidden; 
-        background: #000; /* Safety black background for mobile notch area */
+        background: transparent; /* Allows p5.js canvas to show */
         font-family: sans-serif; 
     }
 
-    /* 2. THE OVERLAY */
+    /* 2. THE OVERLAY (Removing the white background) */
     .overlay { 
         position: absolute; 
         inset: 0; 
@@ -23,9 +23,8 @@
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        background: transparent !important; 
+        background: transparent !important; /* FIXED: Removed white */
         z-index: 10; 
-        padding-top: env(safe-area-inset-top);
     }
 
     /* 3. THE BUTTONS */
@@ -36,7 +35,7 @@
         cursor: pointer;
     }
 
-    /* 4. THE SONG LIST */
+    /* 4. THE SONG LIST (Making it "Glassy") */
     #song-list { 
         width: 90%; 
         max-width: 400px;
@@ -45,11 +44,12 @@
         flex-direction: column; 
         align-items: center; 
         overflow-y: auto; 
+        /* Subtle dark translucent look so waves show through slightly */
         background: rgba(0, 0, 0, 0.4); 
         backdrop-filter: blur(5px);
         border-radius: 15px;
         padding: 10px;
-        border: 2px solid #f1c40f; 
+        border: 2px solid #f1c40f; /* Gold border to match the title */
     }
 
     .hidden { display: none !important; }
@@ -90,20 +90,20 @@ let currentSongUrl = "", speed = 6, alpha = 0;
 const mySongs = [
     { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] }, // Soft Pink
     { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },   // Gold
-    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },          // Sky Blue
+    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },          // Sky Blue (current)
     { name: "3005", url: "./3005.mp3", color: [147, 112, 219] },                     // Deep Purple
     { name: "Rather Lie", url: "./RATHER LIE.mp3", color: [173, 216, 230] },           // Light Blue
-    { name: "Do It", url: "./DO IT.mp3", color: [255, 102, 0] },                         // Orange
+     { name: "Do It", url: "./DO IT.mp3", color: [255, 102, 0] },                         // Orange
     { name: "Dark Thoughts", url: "./Dark Thoughts.mp3", color: [25, 25, 112] },            // Midnight Blue
     { name: "Wavy", url: "./Wavy.mp3", color: [0, 191, 255] },
-    { name: "Jennifer", url: "./Jennifer.mp3", color: [0, 71, 49] },                        //Deep Green
+     { name: "Jennifer", url: "./Jennifer.mp3", color: [0, 71, 49] },                        //Deep Green
     { name: "My Way - Fetty Wap", url: "./My Way.mp3", color: [106, 13, 173] },                //classic purple
     { name: "Kill Bill", url: "./Kill Bill.mp3", color: [38, 89, 229] },                        // Deep Blue
     { name: "All The Love", url: "./ALL THE LOVE.mp3", color: [255, 140, 0] },                    // dark orange
     { name: "Scott and Zelda", url: "./Scott and Zelda.mp3", color: [255, 0, 127] },                //hot pink
-    { name: "Jocelyn Flores", url: "./Jocelyn Flores.mp3", color: [100, 110, 140] },                // muted slate blue
+    { name: "Jocelyn Flores", url: "./Jocelyn Flores.mp3", color: [100, 110, 140] },                // muted slate bluee
     { name: "Magnetic", url: "./Magnetic.mp3", color: [160, 255, 210] },                            // glowing mint
-    { name: "Nicotine Patches", url: "./Nicotine Patches.mp3", color: [160, 0, 0] },                // Blood Red
+     { name: "Nicotine Patches", url: "./Nicotine Patches.mp3", color: [160, 0, 0] },                // Blood Red
 ];
 
 function setup() {
@@ -111,7 +111,8 @@ function setup() {
     
     const home = document.getElementById('home-screen');
     
-    home.innerHTML = `
+    // We'll use your existing 'canContinue' variable here
+ home.innerHTML = `
         <h1 id="menu-title" style="letter-spacing: 8px; margin-top: 40px; margin-bottom: 25px; font-size: 45px; transition: color 0.4s ease, transform 0.1s ease; font-weight: 900; text-transform: uppercase;">
             GOATED TILES
         </h1>
@@ -162,17 +163,21 @@ function setup() {
     playMenuPreview();
 }
 
-function togglePractice() {
-    canContinue = !canContinue;
-    setup(); 
-}
 
+
+// --- ADD THIS TO THE BOTTOM OF YOUR SCRIPT ---
+function togglePractice() {
+    isPracticeMode = !isPracticeMode;
+    setup(); // This re-draws the menu to show the purple 'ON' color
+}
 function loadAndStart() {
+    // 1. FORCE KILL the menu preview immediately
     if (previewSound) {
         previewSound.stop();
-        previewSound.dispose(); 
+        previewSound.dispose(); // Clears it from memory
     }
     
+    // 2. Kill any old game sound
     if (mySound) mySound.stop();
 
     document.getElementById('home-screen').innerHTML = "<h1 class='title-3d' style='font-size:24px;'>LOADING...</h1>";
@@ -204,17 +209,24 @@ class Tile {
     }
 
     show() {
-        push(); 
+        push(); // Protects other drawing settings
         
+        // 1. Subtle Outer Glow/Shadow
         noStroke();
-        fill(0, 30); 
+        fill(0, 30); // Very faint shadow
         rect(this.x + 8, this.y + 8, this.w - 16, this.h - 16, 15); 
 
+        // 2. The Main Tile Body
+        // Using a deep charcoal (#1a1a1e) instead of flat black
         fill(26, 26, 30); 
-        stroke(255, 60); 
+        stroke(255, 60); // A faint white rim makes it pop
         strokeWeight(2);
+        
+        // 15px Rounded Corners for that modern app feel
         rect(this.x + 5, this.y + 5, this.w - 10, this.h - 10, 15);
         
+        // 3. The "Glass" Shine (This is the secret sauce)
+        // A semi-transparent white highlight at the top of the tile
         fill(255, 25); 
         noStroke();
         rect(this.x + 12, this.y + 12, this.w - 24, this.h / 3.5, 8); 
@@ -226,25 +238,32 @@ class Tile {
 function draw() {
     // --- 1. MENU PULSE & PS3 WAVE LOGIC ---
     if (gameState === "MENU") {
-        background(0); 
+        background(0); // Pure black background for that "Midnight" vibe
         
         let vol = amp.getLevel();
         let r = currentPulseColor[0];
         let g = currentPulseColor[1];
         let b = currentPulseColor[2];
 
+        // --- NEW: DYNAMIC TITLE UPDATE ---
         let title = document.getElementById('menu-title');
         if (title) {
+            // Fades color to match the song preview
             title.style.color = `rgb(${r}, ${g}, ${b})`;
+            
+            // Subtle "throb" to the beat
             let titleScale = map(vol, 0, 0.3, 1.0, 1.1);
             title.style.transform = `scale(${titleScale})`;
         }
 
+        // --- DRAW PS3 RIBBONS ---
         noFill();
         strokeWeight(3);
         
+        // We draw 3 overlapping waves with different offsets
         for (let i = 0; i < 3; i++) {
             stroke(r, g, b, 150 - (i * 40)); 
+            
             beginShape();
             for (let x = 0; x <= width; x += 25) {
                 let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
@@ -257,6 +276,7 @@ function draw() {
         return; 
     }
 
+
     // --- 2. GAMEPLAY STATE CHECK ---
     if (gameState !== "PLAYING") return;
 
@@ -268,27 +288,26 @@ function draw() {
         let b = currentPulseColor[2];
 
         let pR = map(vol, 0, 0.3, 255, r);
-        let pG = map(vol, 0, 0.3, 255, g);
+        let pG = map(vol, 0, 0.3, 255, b);
         let pB = map(vol, 0, 0.3, 255, b);
         background(pR, pG, pB);
     } else {
         background(255);
     }
     
-    // --- PIANO TILES SPEED MECHANICS ---
-    // 1. Smoothly ramps speed up over 1500 frames (~25s) and HARD CAPS at +2.5
-    alpha = map(min(frameCount, 1500), 0, 1500, 0, 2.5); 
-    
+    // --- SPEED ACCELERATION WITH A HARD CAP ---
+    // Ramps up rapidly like your original code, but caps alpha at 6.0 so it stays humanly possible
+    alpha = min(frameCount / 200, 6.0); 
+
     let vol = amp.getLevel();
-    // 2. Controlled volume-reactive speed bump (Tightened so bass doesn't tele-port tiles)
-    let varR = vol < 0.2 ? 0.9 : map(vol, 0.2, 0.8, 0.9, 1.15);
+    let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
     // --- 4. GRID ---
     stroke(220);
     for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
 
-    // --- 5. TILES (With Pro Multiplier capped down to 1.4 for readability) ---
-    let proMultiplier = isProMode ? 1.4 : 1.0; 
+    // --- 5. TILES (With Pro Multiplier) ---
+    let proMultiplier = isProMode ? 1.8 : 1.0; 
 
     for (let i = tiles.length - 1; i >= 0; i--) {
         let t = tiles[i];
@@ -297,7 +316,6 @@ function draw() {
 
         if (t.y > -t.h + 5 && t.once) {
             t.once = false;
-            // Preserved exact random tile logic
             tiles.push(new Tile(floor(random(4))));
         }
 
@@ -307,7 +325,7 @@ function draw() {
         }
     }
 
-    // --- 6. HUD ---
+    // --- 6. HUD (Score, Combo, Feedback) ---
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
@@ -355,7 +373,6 @@ function draw() {
     textAlign(CENTER, CENTER);
     text("PRO", 60, 40); 
 }
-
 // INPUT HANDLING
 function mousePressed() {
     if (gameState !== "PLAYING") return;
@@ -369,30 +386,33 @@ function keyPressed() {
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = -1;
+    // Standard WASD / Arrow Mapping
     if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW)  targetLane = 0;
     if (key === 's' || key === 'S' || keyCode === UP_ARROW)    targetLane = 1;
     if (key === 'w' || key === 'W' || keyCode === DOWN_ARROW)  targetLane = 2;
     if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 3; 
 
+    // We no longer need to pass 'true' here!
     if (targetLane !== -1) checkHit(targetLane);
 }
-
-function touchStarted() {
+    function touchStarted() {
     if (gameState !== "PLAYING") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
+    // Map the horizontal touch position to one of the 4 lanes
     let targetLane = floor(map(mouseX, 0, width, 0, 4));
     
     if (targetLane >= 0 && targetLane <= 3) {
         checkHit(targetLane);
     }
-    return false; 
+    return false; // This prevents the screen from scrolling while you play
 }
 
 function checkHit(lane) {
     let t = tiles[0]; 
     
     if (t && t.lane === lane) {
+        // --- MERCY BUFFER: Adds 20px of invisible "hit zone" ---
         let buffer = 20; 
         let isTouching = (controlMode === "KEYBOARD") || (mouseY >= t.y - buffer && mouseY <= t.y + t.h + buffer);
 
@@ -425,16 +445,17 @@ function checkHit(lane) {
         triggerGameOver();
     }
 }
-
 function triggerGameOver() {
     gameState = "GAMEOVER";
     
+    // 1. SOUND LOGIC: Pause for Practice, Stop for Normal
     if (canContinue) {
         if (mySound) mySound.pause(); 
     } else {
         if (mySound) mySound.stop();
     }
 
+    // 2. PRACTICE MODE UI CHECK
     const contBtn = document.getElementById('continue-btn');
     if (canContinue) {
         contBtn.style.display = "block"; 
@@ -442,6 +463,7 @@ function triggerGameOver() {
         contBtn.style.display = "none";
     }
 
+    // 3. YOUR ORIGINAL HIGH SCORE LOGIC
     let scoreKey = "best_" + currentSongUrl; 
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = (score > previousBest);
@@ -459,75 +481,102 @@ function triggerGameOver() {
         <span style="font-size: 18px; color: #666;">BEST: ${isNewRecord ? score : previousBest}</span>
     `;
     
+    // 4. THE DEATH SCREEN DELAY (Anti-Accidental Click)
     const deathScreen = document.getElementById('death-screen');
     deathScreen.classList.remove('hidden');
     
+    // Select all buttons (Continue, Restart, Home)
     let deathButtons = deathScreen.querySelectorAll('.btn');
     
+    // Hide them immediately so you can't click them while tapping fast
     deathButtons.forEach(btn => {
         btn.style.visibility = "hidden";
         btn.style.opacity = "0";
     });
 
+    // Wait 1.5 seconds, then fade them in nicely
     setTimeout(() => {
         deathButtons.forEach(btn => {
-            btn.style.transition = "opacity 0.5s"; 
+            btn.style.transition = "opacity 0.5s"; // Smooth "premium" fade
             btn.style.visibility = "visible";
             btn.style.opacity = "1";
         });
     }, 700); 
 }
-
 function restartGame() {
     document.getElementById('death-screen').classList.add('hidden');
     startGame();
 }
 
 function goHome() {
+    // 1. Kill the music and reset state
     if (mySound) mySound.stop();
     gameState = "MENU";
     
+    // 2. Hide the Death Screen 
     document.getElementById('death-screen').classList.add('hidden');
     
+    // 3. Show the Home Screen container
     const home = document.getElementById('home-screen');
     home.classList.remove('hidden');
     
+    // 4. Let setup() do ALL the heavy lifting
+    // It will check if pulseMode is true/false and draw the button correctly
     setup();
     playMenuPreview();
 }
 
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
-
 function showFeedback(txt, col) {
     feedbackText = txt;
     feedbackColor = col;
     feedbackTimer = 25; 
 }
-
-function togglePulse() {
-    pulseMode = !pulseMode; 
-    setup(); 
+    function togglePulse() {
+    pulseMode = !pulseMode; // Flips the switch
+    setup(); // Re-runs the function above to update the button color
 }
-
+    // 2. Toggle for the Input System
 function toggleControls() {
     controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK";
-    setup(); 
+    setup(); // Re-render menu to update button text
 }
-
-function togglePro() {
-    isProMode = !isProMode; 
-    setup(); 
+   function togglePro() {
+    isProMode = !isProMode; // Flip the true/false
+    console.log("Pro Mode is now: " + isProMode);
+    setup(); // <--- THIS RE-DRAWS THE MENU WITH THE NEW COLOR
 }
-
-let previewSound; 
+    function togglePractice() {
+    canContinue = !canContinue; 
+    console.log("Practice Mode is now: " + canContinue);
+    setup(); // This RE-DRAWS the home screen with the new color
+}
+    function handleRevive() {
+    // Hide the death screen and go back to playing
+    document.getElementById('death-screen').classList.add('hidden');
+    
+    tiles = []; 
+    tiles.push(new Tile(floor(random(4)))); 
+    combo = 0; 
+    
+    gameState = "PLAYING";
+    if (mySound) mySound.play(); // Pick the beat back up
+    showFeedback("RESUMED", "#9b59b6");
+}
+    let previewSound; // Global variable for the menu music
 
 function playMenuPreview() {
+    // 1. If it's already playing, don't start it again!
     if (previewSound && previewSound.isPlaying()) return;
+
+    // 2. Stop everything else just in case
     if (mySound) mySound.stop();
 
     let randomSong = random(mySongs);
     
+    // 3. Load the preview
     previewSound = loadSound(randomSong.url, () => {
+        // Double check we are still in the MENU before playing
         if (gameState === "MENU") {
             previewSound.play();
             previewSound.setVolume(0.4); 
