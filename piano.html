@@ -35,6 +35,7 @@
         cursor: pointer;
     }
 
+    /* TAB BUTTON STYLES */
     .tab-btn {
         flex: 1; padding: 12px; font-size: 13px; font-weight: bold;
         border: 2px solid #f1c40f; background: #111; color: #fff;
@@ -70,19 +71,7 @@
 <body>
 
 <div id="home-screen" class="overlay">
-    <h1 id="menu-title" style="letter-spacing: 8px; margin-top: 20px; margin-bottom: 15px; font-size: 38px; font-weight: 900; text-transform: uppercase;">
-        GOATED TILES
-    </h1>
-    
-    <!-- TAB TOGGLE -->
-    <div style="display: flex; gap: 10px; width: 90%; max-width: 400px; margin-bottom: 15px;">
-        <button id="tab-classic" class="tab-btn active" onclick="switchTab('CLASSIC')">🎹 CLASSIC PIANO</button>
-        <button id="tab-mp3" class="tab-btn" onclick="switchTab('MP3')">🔥 GOATED MP3s</button>
-    </div>
-
-    <!-- SETTINGS ROW -->
-    <div id="settings-bar" style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; width: 95%;"></div>
-
+    <h1 style="letter-spacing: 5px;">GOATED TILES test67</h1>
     <div id="song-list"></div>
 </div>
 
@@ -95,7 +84,7 @@
 </div>
 
 <script>
-let activeTab = "CLASSIC"; // "CLASSIC" or "MP3"
+let activeTab = "CLASSIC"; // Default active tab
 let canContinue = false; // Default is OFF (Normal Mode)  
 let combo = 0;    
 let isProMode = false; // Starts off by default    
@@ -108,22 +97,16 @@ let feedbackTimer = 0;
 let mySound, amp, tiles = [], score = 0, gameState = "MENU";
 let currentSongUrl = "", speed = 9, alpha = 0;
 
-// CLASSIC PIANO SCROLL ENGINE VARIABLES
-let cameraY = 0;
-let targetCameraY = 0;
-let currentNoteIndex = 0;
-let synth;
-let activeClassicSong = null;
-
-// CLASSIC PIANO TRACKS (Includes Your Lie in April)
+// Classical Song List for Tab 1
 const classicSongs = [
-    { name: "Hikaru Nara (Your Lie in April)", notes: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], color: [255, 105, 180] },
-    { name: "Ballade No. 1 (Your Lie in April)", notes: [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25], color: [147, 112, 219] },
-    { name: "Rondo Capriccioso (Your Lie in April)", notes: [329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], color: [255, 215, 0] },
-    { name: "Für Elise", notes: [659.25, 622.25, 659.25, 622.25, 659.25, 493.88, 587.33, 523.25, 440.00], color: [135, 206, 235] },
-    { name: "Canon in D", notes: [293.66, 220.00, 246.94, 185.00, 196.00, 146.83, 196.00, 220.00], color: [160, 255, 210] }
+    { name: "Hikaru Nara (Your Lie in April)", color: [255, 105, 180] },
+    { name: "Ballade No. 1 (Your Lie in April)", color: [147, 112, 219] },
+    { name: "Rondo Capriccioso (Your Lie in April)", color: [255, 215, 0] },
+    { name: "Für Elise", color: [135, 206, 235] },
+    { name: "Canon in D", color: [160, 255, 210] }
 ];
 
+// MP3 Song List for Tab 2
 const mySongs = [
     { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] }, // Soft Pink
     { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },   // Gold
@@ -145,15 +128,10 @@ const mySongs = [
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    synth = new p5.Oscillator('sine');
-    amp = new p5.Amplitude();
-    renderSettingsBar();
-    renderSongList();
-    playMenuPreview();
-}
-
-function renderSettingsBar() {
-    const settings = document.getElementById('settings-bar');
+    
+    const home = document.getElementById('home-screen');
+    
+    // Construct settings bar button styling
     let pulseBg = pulseMode ? '#2ecc71' : '#666';
     let proBg = isProMode ? '#f1c40f' : '#666';
     let proColor = isProMode ? '#000' : '#fff';
@@ -162,11 +140,30 @@ function renderSettingsBar() {
     let proText = isProMode ? 'ON' : 'OFF';
     let practiceText = canContinue ? 'ON' : 'OFF';
 
-    settings.innerHTML = 
-        '<button class="btn" onclick="togglePulse()" style="background: ' + pulseBg + '; width: 85px; padding: 10px; font-size: 12px;">VFX: ' + pulseText + '</button>' +
-        '<button class="btn" onclick="togglePro()" style="background: ' + proBg + '; width: 85px; padding: 10px; font-size: 12px; color: ' + proColor + ';">PRO: ' + proText + '</button>' +
-        '<button class="btn" onclick="togglePractice()" style="background: ' + practiceBg + '; width: 85px; padding: 10px; font-size: 11px;">PRACTICE: ' + practiceText + '</button>' +
-        '<button class="btn" onclick="toggleControls()" style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">' + controlMode + '</button>';
+    home.innerHTML = 
+        '<h1 id="menu-title" style="letter-spacing: 8px; margin-top: 20px; margin-bottom: 15px; font-size: 38px; font-weight: 900; text-transform: uppercase;">' +
+            'GOATED TILES' +
+        '</h1>' +
+        
+        '<!-- TAB BUTTONS -->' +
+        '<div style="display: flex; gap: 10px; width: 90%; max-width: 400px; margin-bottom: 15px;">' +
+            '<button id="tab-classic" class="tab-btn ' + (activeTab === 'CLASSIC' ? 'active' : '') + '" onclick="switchTab(\'CLASSIC\')">🎹 CLASSIC PIANO</button>' +
+            '<button id="tab-mp3" class="tab-btn ' + (activeTab === 'MP3' ? 'active' : '') + '" onclick="switchTab(\'MP3\')">🔥 GOATED MP3s</button>' +
+        '</div>' +
+
+        '<div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; width: 95%; margin-left: auto; margin-right: auto;">' +
+            '<button class="btn" onclick="togglePulse()" style="background: ' + pulseBg + '; width: 85px; padding: 10px; font-size: 12px;">VFX: ' + pulseText + '</button>' +
+            '<button class="btn" onclick="togglePro()" style="background: ' + proBg + '; width: 85px; padding: 10px; font-size: 12px; color: ' + proColor + ';">PRO: ' + proText + '</button>' +
+            '<button class="btn" onclick="togglePractice()" style="background: ' + practiceBg + '; width: 85px; padding: 10px; font-size: 11px;">PRACTICE: ' + practiceText + '</button>' +
+            '<button class="btn" onclick="toggleControls()" style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">' + controlMode + '</button>' +
+        '</div>' +
+
+        '<div id="song-list"></div>';
+
+    renderSongList();
+
+    amp = new p5.Amplitude();
+    playMenuPreview();
 }
 
 function switchTab(tab) {
@@ -179,47 +176,36 @@ function switchTab(tab) {
 function renderSongList() {
     const list = document.getElementById('song-list');
     list.innerHTML = ""; 
-    const songsToRender = activeTab === "CLASSIC" ? classicSongs : mySongs;
-
-    songsToRender.forEach(s => {
-        let key = activeTab === "CLASSIC" ? "best_classic_" + s.name : "best_" + s.url;
-        let savedBest = localStorage.getItem(key) || 0;
-        let btn = document.createElement('button');
-        btn.className = "btn";
-        btn.innerHTML = s.name + '<br><span style="font-size: 12px; opacity: 0.7;">Best: ' + savedBest + '</span>';
-        
-        btn.onclick = () => { 
-            currentPulseColor = s.color;
-            if (activeTab === "CLASSIC") {
-                startClassicGame(s);
-            } else {
+    
+    if (activeTab === "CLASSIC") {
+        classicSongs.forEach(s => {
+            let savedBest = localStorage.getItem("best_classic_" + s.name) || 0;
+            let btn = document.createElement('button');
+            btn.className = "btn";
+            btn.innerHTML = s.name + '<br><span style="font-size: 12px; opacity: 0.7;">Best: ' + savedBest + '</span>';
+            
+            btn.onclick = () => { 
+                currentPulseColor = s.color; 
+                // We will connect Step 2 (Classic Board-Scroll Engine) here next!
+            };
+            
+            list.appendChild(btn);
+        });
+    } else {
+        mySongs.forEach(s => {
+            let savedBest = localStorage.getItem("best_" + s.url) || 0;
+            let btn = document.createElement('button');
+            btn.className = "btn";
+            btn.innerHTML = s.name + '<br><span style="font-size: 12px; opacity: 0.7;">Best: ' + savedBest + '</span>';
+            
+            btn.onclick = () => { 
                 currentSongUrl = s.url; 
+                currentPulseColor = s.color; 
                 loadAndStart(); 
-            }
-        };
-        
-        list.appendChild(btn);
-    });
-}
-
-function startClassicGame(songObj) {
-    activeClassicSong = songObj;
-    if (previewSound) previewSound.stop();
-    if (mySound) mySound.stop();
-
-    document.getElementById('home-screen').classList.add('hidden');
-    document.getElementById('death-screen').classList.add('hidden');
-    gameState = "PLAYING_CLASSIC";
-    score = 0;
-    cameraY = 0;
-    targetCameraY = 0;
-    currentNoteIndex = 0;
-    tiles = [];
-
-    let rowH = height / 4;
-    for (let r = 0; r < 200; r++) {
-        let lane = floor(random(4));
-        tiles.push({ lane: lane, yIndex: r, rowY: height - (r * rowH) - rowH, hit: false });
+            };
+            
+            list.appendChild(btn);
+        });
     }
 }
 
@@ -235,18 +221,14 @@ function loadAndStart() {
     
     mySound = loadSound(currentSongUrl, () => {
         document.getElementById('home-screen').classList.add('hidden');
-        document.getElementById('death-screen').classList.add('hidden');
         startGame();
     });
 }
 
 function startGame() {
-    tiles = []; score = 0; speed = 9; frameCount = 0; combo = 0; gameState = "PLAYING";
+    tiles = []; score = 0; speed = 9; frameCount = 0; gameState = "PLAYING";
     tiles.push(new Tile(floor(random(4))));
-    if (mySound) {
-        mySound.stop();
-        mySound.play();
-    }
+    mySound.play();
 }
 
 class Tile {
@@ -269,12 +251,14 @@ class Tile {
         push(); 
         
         if (this.isHit) {
+            // Piano Tiles Gray Tap Feedback
             fill(180, 180, 180, this.hitAlpha);
             stroke(220);
             strokeWeight(1);
             rect(this.x, this.y, this.w, this.h);
-            this.hitAlpha -= 40; 
+            this.hitAlpha -= 40; // Quick fade out
         } else {
+            // Main Piano Tiles Style Grid-Cell
             noStroke();
             fill(0, 30); 
             rect(this.x + 4, this.y + 4, this.w - 8, this.h - 8, 8); 
@@ -327,37 +311,6 @@ function draw() {
         return; 
     }
 
-    if (gameState === "PLAYING_CLASSIC") {
-        background(255);
-        cameraY = lerp(cameraY, targetCameraY, 0.2);
-
-        push();
-        translate(0, cameraY);
-
-        let rowH = height / 4;
-        let colW = width / 4;
-
-        stroke(200); strokeWeight(1.5);
-        for (let c = 1; c < 4; c++) line(c * colW, -10000, c * colW, height + 10000);
-        for (let r = -10; r < 210; r++) line(0, height - (r * rowH), width, height - (r * rowH));
-
-        for (let t of tiles) {
-            let tileY = t.rowY;
-            if (t.hit) {
-                fill(200);
-                rect(t.lane * colW, tileY, colW, rowH);
-            } else {
-                fill(20, 20, 25);
-                rect(t.lane * colW, tileY, colW, rowH);
-            }
-        }
-        pop();
-
-        fill(255, 0, 0); noStroke(); textSize(50); textAlign(CENTER);
-        text(score, width / 2, 80);
-        return;
-    }
-
     if (gameState !== "PLAYING") return;
 
     if (pulseMode) {
@@ -374,22 +327,27 @@ function draw() {
         background(255);
     }
     
+    // PIANO TILES ACCELERATION + SPEED CAP
     alpha = min(frameCount / 100, 11.0);
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
+    // --- DRAW PIANO TILES GRID (VERTICAL & HORIZONTAL LINES) ---
     stroke(220);
     strokeWeight(1.5);
     
+    // Vertical Lane Dividers
     for (let i = 1; i < 4; i++) {
         line(i * width/4, 0, i * width/4, height);
     }
     
+    // Horizontal Row Dividers (Creates the Piano Tiles grid)
     let gridStep = height / 5;
     for (let y = 0; y <= height; y += gridStep) {
         line(0, y, width, y);
     }
 
+    // --- TILES UPDATE LOOP ---
     let proMultiplier = isProMode ? 1.35 : 1.0; 
 
     for (let i = tiles.length - 1; i >= 0; i--) {
@@ -402,17 +360,20 @@ function draw() {
             tiles.push(new Tile(floor(random(4))));
         }
 
+        // Clean up faded hit tiles
         if (t.isHit && t.hitAlpha <= 0) {
             tiles.splice(i, 1);
             continue;
         }
 
+        // Missed tile check
         if (t.y > height && !t.isHit) {
             combo = 0; 
             triggerGameOver();
         }
     }
 
+    // --- HUD ---
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
@@ -447,6 +408,7 @@ function draw() {
         feedbackTimer--; 
     }
 
+    // --- PRO BUTTON ---
     rectMode(CORNER); 
     fill(isProMode ? "#FFD700" : 200); 
     stroke(0);
@@ -460,16 +422,16 @@ function draw() {
     text("PRO", 60, 40); 
 }
 
-// INPUT ROUTING
+// INPUT HANDLING
 function mousePressed() {
-    if (gameState === "MENU" || gameState === "GAMEOVER") return;
+    if (gameState !== "PLAYING") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
     let clickedLane = floor(mouseX / (width / 4));
-    handleInput(clickedLane);
+    checkHit(clickedLane);
 }
 
 function keyPressed() {
-    if (gameState === "MENU" || gameState === "GAMEOVER") return;
+    if (gameState !== "PLAYING") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = -1;
@@ -478,49 +440,30 @@ function keyPressed() {
     if (key === 'w' || key === 'W' || keyCode === DOWN_ARROW)  targetLane = 2;
     if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 3; 
 
-    if (targetLane !== -1) handleInput(targetLane);
+    if (targetLane !== -1) checkHit(targetLane);
 }
 
 function touchStarted() {
-    if (gameState === "MENU" || gameState === "GAMEOVER") return;
+    if (gameState !== "PLAYING") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = floor(map(mouseX, 0, width, 0, 4));
+    
     if (targetLane >= 0 && targetLane <= 3) {
-        handleInput(targetLane);
+        checkHit(targetLane);
     }
-    return false;
-}
-
-function handleInput(lane) {
-    if (gameState === "PLAYING_CLASSIC") {
-        checkHitClassic(lane);
-    } else if (gameState === "PLAYING") {
-        checkHit(lane);
-    }
-}
-
-function checkHitClassic(lane) {
-    let targetTile = tiles[score];
-    if (targetTile && targetTile.lane === lane) {
-        targetTile.hit = true;
-        score++;
-        targetCameraY += height / 4;
-
-        let noteFreq = activeClassicSong.notes[currentNoteIndex % activeClassicSong.notes.length];
-        currentNoteIndex++;
-        synth.freq(noteFreq);
-        synth.start();
-        synth.amp(0.5, 0.05);
-        setTimeout(() => synth.amp(0, 0.1), 150);
-
-    } else {
-        triggerGameOver();
-    }
+    return false; 
 }
 
 function checkHit(lane) {
-    let t = tiles[0]; 
+    // Find the lowest active non-hit tile
+    let t = null;
+    for (let i = 0; i < tiles.length; i++) {
+        if (!tiles[i].isHit) {
+            t = tiles[i];
+            break;
+        }
+    }
     
     if (t && t.lane === lane) {
         if (t.y > -t.h && t.y < height) {
@@ -537,6 +480,7 @@ function checkHit(lane) {
                 showFeedback("GOOD x" + multiplier, "#2ecc71"); 
             }
 
+            // Flag tile as hit so it displays gray feedback and fades
             t.isHit = true;
         } else {
             combo = 0; 
@@ -551,7 +495,6 @@ function checkHit(lane) {
 
 function triggerGameOver() {
     gameState = "GAMEOVER";
-    if (synth) synth.stop();
     
     if (canContinue) {
         if (mySound) mySound.pause(); 
@@ -559,10 +502,14 @@ function triggerGameOver() {
         if (mySound) mySound.stop();
     }
 
-    let scoreKey = (gameState === "PLAYING_CLASSIC" || activeTab === "CLASSIC") 
-        ? "best_classic_" + (activeClassicSong ? activeClassicSong.name : "song") 
-        : "best_" + currentSongUrl;
+    const contBtn = document.getElementById('continue-btn');
+    if (canContinue) {
+        contBtn.style.display = "block"; 
+    } else {
+        contBtn.style.display = "none";
+    }
 
+    let scoreKey = "best_" + currentSongUrl; 
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = (score > previousBest);
 
@@ -577,34 +524,31 @@ function triggerGameOver() {
     document.getElementById('final-score').innerHTML = 
         'SCORE: ' + score + '<br><span style="font-size: 18px; color: #666;">BEST: ' + (isNewRecord ? score : previousBest) + '</span>';
     
-    const contBtn = document.getElementById('continue-btn');
-    if (canContinue) {
-        contBtn.style.display = "block"; 
-    } else {
-        contBtn.style.display = "none";
-    }
-
     const deathScreen = document.getElementById('death-screen');
     deathScreen.classList.remove('hidden');
     
     let deathButtons = deathScreen.querySelectorAll('.btn');
+    
     deathButtons.forEach(btn => {
-        btn.style.visibility = "visible";
-        btn.style.opacity = "1";
+        btn.style.visibility = "hidden";
+        btn.style.opacity = "0";
     });
+
+    setTimeout(() => {
+        deathButtons.forEach(btn => {
+            btn.style.transition = "opacity 0.5s"; 
+            btn.style.visibility = "visible";
+            btn.style.opacity = "1";
+        });
+    }, 700); 
 }
 
 function restartGame() {
     document.getElementById('death-screen').classList.add('hidden');
-    if (activeTab === "CLASSIC") {
-        startClassicGame(activeClassicSong);
-    } else {
-        startGame();
-    }
+    startGame();
 }
 
 function goHome() {
-    if (synth) synth.stop();
     if (mySound) mySound.stop();
     gameState = "MENU";
     
@@ -614,6 +558,7 @@ function goHome() {
     home.classList.remove('hidden');
     
     setup();
+    playMenuPreview();
 }
 
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
@@ -646,17 +591,13 @@ function togglePractice() {
 
 function handleRevive() {
     document.getElementById('death-screen').classList.add('hidden');
+    tiles = []; 
+    tiles.push(new Tile(floor(random(4)))); 
     combo = 0; 
     
-    if (activeTab === "CLASSIC") {
-        startClassicGame(activeClassicSong);
-    } else {
-        tiles = []; 
-        tiles.push(new Tile(floor(random(4)))); 
-        gameState = "PLAYING";
-        if (mySound) mySound.play(); 
-        showFeedback("RESUMED", "#9b59b6");
-    }
+    gameState = "PLAYING";
+    if (mySound) mySound.play(); 
+    showFeedback("RESUMED", "#9b59b6");
 }
 
 let previewSound; 
