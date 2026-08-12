@@ -11,7 +11,7 @@
     /* 1. BODY & BACKGROUND */
     body { 
         margin: 0; padding: 0; overflow: hidden; 
-        background: #000; 
+        background: transparent; /* Allows p5.js canvas to show */
         font-family: sans-serif; 
     }
 
@@ -29,9 +29,9 @@
 
     /* 3. THE BUTTONS */
     .btn { 
-        width: 80%; max-width: 300px; padding: 18px; margin: 8px; 
+        width: 80%; max-width: 300px; padding: 20px; margin: 10px; 
         background: #000; color: #fff; border: 1px solid #f1c40f; 
-        border-radius: 12px; font-size: 16px; font-weight: bold; 
+        border-radius: 12px; font-size: 18px; font-weight: bold; 
         cursor: pointer;
     }
 
@@ -48,12 +48,12 @@
     #song-list { 
         width: 90%; 
         max-width: 400px;
-        height: 280px; 
+        height: 300px; 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
         overflow-y: auto; 
-        background: rgba(0, 0, 0, 0.6); 
+        background: rgba(0, 0, 0, 0.4); 
         backdrop-filter: blur(5px);
         border-radius: 15px;
         padding: 10px;
@@ -95,13 +95,13 @@
 </div>
 
 <script>
-let activeTab = "CLASSIC"; 
-let canContinue = false;  
+let activeTab = "CLASSIC"; // "CLASSIC" or "MP3"
+let canContinue = false; // Default is OFF (Normal Mode)  
 let combo = 0;    
-let isProMode = false;     
-let controlMode = "CLICK";     
-let currentPulseColor = [255, 215, 0];     
-let pulseMode = false;     
+let isProMode = false; // Starts off by default    
+let controlMode = "CLICK"; // Start in mobile/mouse mode    
+let currentPulseColor = [255, 255, 255]; // Defaults to white    
+let pulseMode = false; // Default is Classic (false)    
 let feedbackText = "";
 let feedbackColor = "#fff";
 let feedbackTimer = 0;    
@@ -113,7 +113,9 @@ let cameraY = 0;
 let targetCameraY = 0;
 let currentNoteIndex = 0;
 let synth;
+let activeClassicSong = null;
 
+// CLASSIC PIANO TRACKS (Includes Your Lie in April)
 const classicSongs = [
     { name: "Hikaru Nara (Your Lie in April)", notes: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], color: [255, 105, 180] },
     { name: "Ballade No. 1 (Your Lie in April)", notes: [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25], color: [147, 112, 219] },
@@ -123,22 +125,22 @@ const classicSongs = [
 ];
 
 const mySongs = [
-    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] },
-    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },
-    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },
-    { name: "3005", url: "./3005.mp3", color: [147, 112, 219] },
-    { name: "Rather Lie", url: "./RATHER LIE.mp3", color: [173, 216, 230] },
-    { name: "Do It", url: "./DO IT.mp3", color: [255, 102, 0] },
-    { name: "Dark Thoughts", url: "./Dark Thoughts.mp3", color: [25, 25, 112] },
+    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] }, // Soft Pink
+    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },   // Gold
+    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },          // Sky Blue (current)
+    { name: "3005", url: "./3005.mp3", color: [147, 112, 219] },                     // Deep Purple
+    { name: "Rather Lie", url: "./RATHER LIE.mp3", color: [173, 216, 230] },           // Light Blue
+    { name: "Do It", url: "./DO IT.mp3", color: [255, 102, 0] },                         // Orange
+    { name: "Dark Thoughts", url: "./Dark Thoughts.mp3", color: [25, 25, 112] },            // Midnight Blue
     { name: "Wavy", url: "./Wavy.mp3", color: [0, 191, 255] },
-    { name: "Jennifer", url: "./Jennifer.mp3", color: [0, 71, 49] },
-    { name: "My Way - Fetty Wap", url: "./My Way.mp3", color: [106, 13, 173] },
-    { name: "Kill Bill", url: "./Kill Bill.mp3", color: [38, 89, 229] },
-    { name: "All The Love", url: "./ALL THE LOVE.mp3", color: [255, 140, 0] },
-    { name: "Scott and Zelda", url: "./Scott and Zelda.mp3", color: [255, 0, 127] },
-    { name: "Jocelyn Flores", url: "./Jocelyn Flores.mp3", color: [100, 110, 140] },
-    { name: "Magnetic", url: "./Magnetic.mp3", color: [160, 255, 210] },
-    { name: "Nicotine Patches", url: "./Nicotine Patches.mp3", color: [160, 0, 0] }
+    { name: "Jennifer", url: "./Jennifer.mp3", color: [0, 71, 49] },                        //Deep Green
+    { name: "My Way - Fetty Wap", url: "./My Way.mp3", color: [106, 13, 173] },                //classic purple
+    { name: "Kill Bill", url: "./Kill Bill.mp3", color: [38, 89, 229] },                        // Deep Blue
+    { name: "All The Love", url: "./ALL THE LOVE.mp3", color: [255, 140, 0] },                    // dark orange
+    { name: "Scott and Zelda", url: "./Scott and Zelda.mp3", color: [255, 0, 127] },                //hot pink
+    { name: "Jocelyn Flores", url: "./Jocelyn Flores.mp3", color: [100, 110, 140] },                // muted slate bluee
+    { name: "Magnetic", url: "./Magnetic.mp3", color: [160, 255, 210] },                            // glowing mint
+    { name: "Nicotine Patches", url: "./Nicotine Patches.mp3", color: [160, 0, 0] }                // Blood Red
 ];
 
 function setup() {
@@ -152,27 +154,19 @@ function setup() {
 
 function renderSettingsBar() {
     const settings = document.getElementById('settings-bar');
-    settings.innerHTML = `
-        <button class="btn" onclick="togglePulse()" 
-            style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 85px; padding: 10px; font-size: 12px;">
-            VFX: ${pulseMode ? 'ON' : 'OFF'}
-        </button>
+    let pulseBg = pulseMode ? '#2ecc71' : '#666';
+    let proBg = isProMode ? '#f1c40f' : '#666';
+    let proColor = isProMode ? '#000' : '#fff';
+    let practiceBg = canContinue ? '#9b59b6' : '#666';
+    let pulseText = pulseMode ? 'ON' : 'OFF';
+    let proText = isProMode ? 'ON' : 'OFF';
+    let practiceText = canContinue ? 'ON' : 'OFF';
 
-        <button class="btn" onclick="togglePro()" 
-            style="background: ${isProMode ? '#f1c40f' : '#666'}; width: 85px; padding: 10px; font-size: 12px; color: ${isProMode ? '#000' : '#fff'};">
-            PRO: ${isProMode ? 'ON' : 'OFF'}
-        </button>
-
-        <button class="btn" onclick="togglePractice()" 
-            style="background: ${canContinue ? '#9b59b6' : '#666'}; width: 85px; padding: 10px; font-size: 11px;">
-            PRACTICE: ${canContinue ? 'ON' : 'OFF'}
-        </button>
-        
-        <button class="btn" onclick="toggleControls()" 
-            style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">
-            ${controlMode}
-        </button>
-    `;
+    settings.innerHTML = 
+        '<button class="btn" onclick="togglePulse()" style="background: ' + pulseBg + '; width: 85px; padding: 10px; font-size: 12px;">VFX: ' + pulseText + '</button>' +
+        '<button class="btn" onclick="togglePro()" style="background: ' + proBg + '; width: 85px; padding: 10px; font-size: 12px; color: ' + proColor + ';">PRO: ' + proText + '</button>' +
+        '<button class="btn" onclick="togglePractice()" style="background: ' + practiceBg + '; width: 85px; padding: 10px; font-size: 11px;">PRACTICE: ' + practiceText + '</button>' +
+        '<button class="btn" onclick="toggleControls()" style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">' + controlMode + '</button>';
 }
 
 function switchTab(tab) {
@@ -192,7 +186,7 @@ function renderSongList() {
         let savedBest = localStorage.getItem(key) || 0;
         let btn = document.createElement('button');
         btn.className = "btn";
-        btn.innerHTML = `${s.name}<br><span style="font-size: 12px; opacity: 0.7;">Best: ${savedBest}</span>`;
+        btn.innerHTML = s.name + '<br><span style="font-size: 12px; opacity: 0.7;">Best: ' + savedBest + '</span>';
         
         btn.onclick = () => { 
             currentPulseColor = s.color;
@@ -200,15 +194,13 @@ function renderSongList() {
                 startClassicGame(s);
             } else {
                 currentSongUrl = s.url; 
-                loadAndStartMP3(); 
+                loadAndStart(); 
             }
         };
         
         list.appendChild(btn);
     });
 }
-
-let activeClassicSong = null;
 
 function startClassicGame(songObj) {
     activeClassicSong = songObj;
@@ -231,29 +223,33 @@ function startClassicGame(songObj) {
     }
 }
 
-function loadAndStartMP3() {
-    if (previewSound) previewSound.stop();
+function loadAndStart() {
+    if (previewSound) {
+        previewSound.stop();
+        previewSound.dispose(); 
+    }
+    
     if (mySound) mySound.stop();
 
-    document.getElementById('home-screen').innerHTML = "<h1 class='title-3d' style='font-size:24px; color:#fff;'>LOADING...</h1>";
+    document.getElementById('home-screen').innerHTML = "<h1 class='title-3d' style='font-size:24px;'>LOADING...</h1>";
     
     mySound = loadSound(currentSongUrl, () => {
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('death-screen').classList.add('hidden');
-        startGameMP3();
+        startGame();
     });
 }
 
-function startGameMP3() {
-    tiles = []; score = 0; speed = 9; frameCount = 0; combo = 0; gameState = "PLAYING_MP3";
-    tiles.push(new TileMP3(floor(random(4))));
+function startGame() {
+    tiles = []; score = 0; speed = 9; frameCount = 0; combo = 0; gameState = "PLAYING";
+    tiles.push(new Tile(floor(random(4))));
     if (mySound) {
         mySound.stop();
         mySound.play();
     }
 }
 
-class TileMP3 {
+class Tile {
     constructor(lane) {
         this.lane = lane;
         this.w = width / 4;
@@ -261,47 +257,64 @@ class TileMP3 {
         this.x = this.lane * this.w;
         this.y = -this.h * 2;
         this.once = true;
-        this.isHit = false;
+        this.isHit = false; // Tracks tap feedback
         this.hitAlpha = 255;
     }
 
-    move(v, a) { this.y += (v * speed) + a; }
+    move(v, a) { 
+        this.y += (v * speed) + a; 
+    }
 
     show() {
-        push();
+        push(); 
+        
         if (this.isHit) {
             fill(180, 180, 180, this.hitAlpha);
-            stroke(220); strokeWeight(1);
+            stroke(220);
+            strokeWeight(1);
             rect(this.x, this.y, this.w, this.h);
-            this.hitAlpha -= 40;
+            this.hitAlpha -= 40; 
         } else {
-            noStroke(); fill(0, 30);
+            noStroke();
+            fill(0, 30); 
             rect(this.x + 4, this.y + 4, this.w - 8, this.h - 8, 8); 
-            fill(26, 26, 30); stroke(255, 60); strokeWeight(1.5);
+
+            fill(26, 26, 30); 
+            stroke(255, 60); 
+            strokeWeight(1.5);
             rect(this.x + 2, this.y + 2, this.w - 4, this.h - 4, 8);
-            fill(255, 25); noStroke();
+            
+            fill(255, 25); 
+            noStroke();
             rect(this.x + 6, this.y + 6, this.w - 12, this.h / 3.5, 4); 
         }
+
         pop();
     }
 }
 
 function draw() {
     if (gameState === "MENU") {
-        background(0);
+        background(0); 
+        
         let vol = amp.getLevel();
-        let r = currentPulseColor[0], g = currentPulseColor[1], b = currentPulseColor[2];
+        let r = currentPulseColor[0];
+        let g = currentPulseColor[1];
+        let b = currentPulseColor[2];
 
         let title = document.getElementById('menu-title');
         if (title) {
-            title.style.color = `rgb(${r}, ${g}, ${b})`;
+            title.style.color = "rgb(" + r + ", " + g + ", " + b + ")";
             let titleScale = map(vol, 0, 0.3, 1.0, 1.1);
-            title.style.transform = `scale(${titleScale})`;
+            title.style.transform = "scale(" + titleScale + ")";
         }
 
-        noFill(); strokeWeight(3);
+        noFill();
+        strokeWeight(3);
+        
         for (let i = 0; i < 3; i++) {
             stroke(r, g, b, 150 - (i * 40)); 
+            
             beginShape();
             for (let x = 0; x <= width; x += 25) {
                 let angle = (x * 0.002) + (frameCount * 0.02) + (i * 0.8);
@@ -310,6 +323,7 @@ function draw() {
             }
             endShape();
         }
+        
         return; 
     }
 
@@ -344,12 +358,18 @@ function draw() {
         return;
     }
 
-    if (gameState !== "PLAYING_MP3") return;
+    if (gameState !== "PLAYING") return;
 
     if (pulseMode) {
         let vol = amp.getLevel();
-        let r = currentPulseColor[0], g = currentPulseColor[1], b = currentPulseColor[2];
-        background(map(vol, 0, 0.3, 255, r), map(vol, 0, 0.3, 255, g), map(vol, 0, 0.3, 255, b));
+        let r = currentPulseColor[0];
+        let g = currentPulseColor[1];
+        let b = currentPulseColor[2];
+
+        let pR = map(vol, 0, 0.3, 255, r);
+        let pG = map(vol, 0, 0.3, 255, g);
+        let pB = map(vol, 0, 0.3, 255, b);
+        background(pR, pG, pB);
     } else {
         background(255);
     }
@@ -358,10 +378,17 @@ function draw() {
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    stroke(220); strokeWeight(1.5);
-    for (let i = 1; i < 4; i++) line(i * width/4, 0, i * width/4, height);
+    stroke(220);
+    strokeWeight(1.5);
+    
+    for (let i = 1; i < 4; i++) {
+        line(i * width/4, 0, i * width/4, height);
+    }
+    
     let gridStep = height / 5;
-    for (let y = 0; y <= height; y += gridStep) line(0, y, width, y);
+    for (let y = 0; y <= height; y += gridStep) {
+        line(0, y, width, y);
+    }
 
     let proMultiplier = isProMode ? 1.35 : 1.0; 
 
@@ -372,7 +399,7 @@ function draw() {
 
         if (t.y > -t.h + 5 && t.once) {
             t.once = false;
-            tiles.push(new TileMP3(floor(random(4))));
+            tiles.push(new Tile(floor(random(4))));
         }
 
         if (t.isHit && t.hitAlpha <= 0) {
@@ -381,12 +408,37 @@ function draw() {
         }
 
         if (t.y > height && !t.isHit) {
-            combo = 0; triggerGameOver();
+            combo = 0; 
+            triggerGameOver();
         }
     }
 
-    fill(255, 0, 0); noStroke(); textSize(50); textAlign(CENTER);
+    fill(255, 0, 0); 
+    noStroke();
+    textSize(50);
+    textAlign(CENTER);
     text(score, width / 2, 80);
+
+    if (combo > 1) {
+        let shake = map(vol, 0, 0.3, 0, 8); 
+        fill(255, 215, 0); 
+        textSize(min(30 + combo, 70)); 
+        text("x" + combo, width / 2 + random(-shake, shake), 140);
+        
+        let m = floor(combo / 10) + 1;
+        if (m > 1) {
+            textSize(20);
+            text(m + "X POINTS", width / 2, 190);
+        }
+
+        let rank = "CLEAN";
+        if (combo > 15) rank = "CRISP";
+        if (combo > 30) rank = "GOATED";
+        
+        textSize(15);
+        fill(255); 
+        text(rank, width / 2, 165);
+    }
 
     if (feedbackTimer > 0) {
         fill(feedbackColor);
@@ -394,8 +446,21 @@ function draw() {
         text(feedbackText, width / 2, height / 2 + 50);
         feedbackTimer--; 
     }
+
+    rectMode(CORNER); 
+    fill(isProMode ? "#FFD700" : 200); 
+    stroke(0);
+    strokeWeight(2);
+    rect(20, 20, 80, 40, 5); 
+
+    fill(0);
+    noStroke();
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text("PRO", 60, 40); 
 }
 
+// INPUT ROUTING
 function mousePressed() {
     if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
@@ -430,8 +495,8 @@ function touchStarted() {
 function handleInput(lane) {
     if (gameState === "PLAYING_CLASSIC") {
         checkHitClassic(lane);
-    } else if (gameState === "PLAYING_MP3") {
-        checkHitMP3(lane);
+    } else if (gameState === "PLAYING") {
+        checkHit(lane);
     }
 }
 
@@ -454,7 +519,7 @@ function checkHitClassic(lane) {
     }
 }
 
-function checkHitMP3(lane) {
+function checkHit(lane) {
     let t = tiles[0]; 
     
     if (t && t.lane === lane) {
@@ -487,35 +552,41 @@ function checkHitMP3(lane) {
 function triggerGameOver() {
     gameState = "GAMEOVER";
     if (synth) synth.stop();
-    if (mySound) mySound.pause();
+    
+    if (canContinue) {
+        if (mySound) mySound.pause(); 
+    } else {
+        if (mySound) mySound.stop();
+    }
 
-    let scoreKey = (activeTab === "CLASSIC" && activeClassicSong) 
-        ? "best_classic_" + activeClassicSong.name 
+    let scoreKey = (gameState === "PLAYING_CLASSIC" || activeTab === "CLASSIC") 
+        ? "best_classic_" + (activeClassicSong ? activeClassicSong.name : "song") 
         : "best_" + currentSongUrl;
-        
+
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = (score > previousBest);
 
-    if (isNewRecord) localStorage.setItem(scoreKey, score);
+    if (isNewRecord) {
+        localStorage.setItem(scoreKey, score);
+    }
 
-    document.getElementById('fail-text').innerText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
+    let failText = isNewRecord ? "NEW HIGH SCORE!" : "FAILED";
+    document.getElementById('fail-text').innerText = failText;
     document.getElementById('fail-text').style.color = isNewRecord ? "#2ecc71" : "#e74c3c"; 
     
-    document.getElementById('final-score').innerHTML = `
-        SCORE: ${score}<br>
-        <span style="font-size: 18px; color: #666;">BEST: ${isNewRecord ? score : previousBest}</span>
-    `;
+    document.getElementById('final-score').innerHTML = 
+        'SCORE: ' + score + '<br><span style="font-size: 18px; color: #666;">BEST: ' + (isNewRecord ? score : previousBest) + '</span>';
     
     const contBtn = document.getElementById('continue-btn');
     if (canContinue) {
-        contBtn.style.display = "block";
+        contBtn.style.display = "block"; 
     } else {
         contBtn.style.display = "none";
     }
 
     const deathScreen = document.getElementById('death-screen');
     deathScreen.classList.remove('hidden');
-
+    
     let deathButtons = deathScreen.querySelectorAll('.btn');
     deathButtons.forEach(btn => {
         btn.style.visibility = "visible";
@@ -523,27 +594,12 @@ function triggerGameOver() {
     });
 }
 
-function handleRevive() {
-    document.getElementById('death-screen').classList.add('hidden');
-    tiles = []; 
-    combo = 0; 
-    
-    if (activeTab === "CLASSIC") {
-        startClassicGame(activeClassicSong);
-    } else {
-        tiles.push(new TileMP3(floor(random(4)))); 
-        gameState = "PLAYING_MP3";
-        if (mySound) mySound.play(); 
-        showFeedback("RESUMED", "#9b59b6");
-    }
-}
-
 function restartGame() {
     document.getElementById('death-screen').classList.add('hidden');
     if (activeTab === "CLASSIC") {
         startClassicGame(activeClassicSong);
     } else {
-        startGameMP3();
+        startGame();
     }
 }
 
@@ -551,13 +607,16 @@ function goHome() {
     if (synth) synth.stop();
     if (mySound) mySound.stop();
     gameState = "MENU";
+    
     document.getElementById('death-screen').classList.add('hidden');
+    
     const home = document.getElementById('home-screen');
     home.classList.remove('hidden');
-    renderSettingsBar();
-    renderSongList();
-    playMenuPreview();
+    
+    setup();
 }
+
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 
 function showFeedback(txt, col) {
     feedbackText = txt;
@@ -565,16 +624,49 @@ function showFeedback(txt, col) {
     feedbackTimer = 25; 
 }
 
-function togglePulse() { pulseMode = !pulseMode; renderSettingsBar(); }
-function toggleControls() { controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK"; renderSettingsBar(); }
-function togglePro() { isProMode = !isProMode; renderSettingsBar(); }
-function togglePractice() { canContinue = !canContinue; renderSettingsBar(); }
+function togglePulse() {
+    pulseMode = !pulseMode; 
+    setup(); 
+}
+
+function toggleControls() {
+    controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK";
+    setup(); 
+}
+
+function togglePro() {
+    isProMode = !isProMode; 
+    setup(); 
+}
+
+function togglePractice() {
+    canContinue = !canContinue; 
+    setup(); 
+}
+
+function handleRevive() {
+    document.getElementById('death-screen').classList.add('hidden');
+    combo = 0; 
+    
+    if (activeTab === "CLASSIC") {
+        startClassicGame(activeClassicSong);
+    } else {
+        tiles = []; 
+        tiles.push(new Tile(floor(random(4)))); 
+        gameState = "PLAYING";
+        if (mySound) mySound.play(); 
+        showFeedback("RESUMED", "#9b59b6");
+    }
+}
 
 let previewSound; 
+
 function playMenuPreview() {
     if (previewSound && previewSound.isPlaying()) return;
     if (mySound) mySound.stop();
+
     let randomSong = random(mySongs);
+    
     previewSound = loadSound(randomSong.url, () => {
         if (gameState === "MENU") {
             previewSound.play();
