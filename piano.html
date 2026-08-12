@@ -95,7 +95,7 @@
 </div>
 
 <script>
-let activeTab = "CLASSIC"; // "CLASSIC" or "MP3"
+let activeTab = "CLASSIC"; 
 let canContinue = false;  
 let combo = 0;    
 let isProMode = false;     
@@ -114,7 +114,6 @@ let targetCameraY = 0;
 let currentNoteIndex = 0;
 let synth;
 
-// 1. CLASSIC SONGS (Piano Tiles 1 Board Scroll)
 const classicSongs = [
     { name: "Hikaru Nara (Your Lie in April)", notes: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], color: [255, 105, 180] },
     { name: "Ballade No. 1 (Your Lie in April)", notes: [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25], color: [147, 112, 219] },
@@ -123,7 +122,6 @@ const classicSongs = [
     { name: "Canon in D", notes: [293.66, 220.00, 246.94, 185.00, 196.00, 146.83, 196.00, 220.00], color: [160, 255, 210] }
 ];
 
-// 2. GOATED MP3 SONGS (Your Current Arcade Engine)
 const mySongs = [
     { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] },
     { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },
@@ -210,7 +208,6 @@ function renderSongList() {
     });
 }
 
-// --- CLASSIC PIANO ENGINE (Piano Tiles 1 Board Scroll) ---
 let activeClassicSong = null;
 
 function startClassicGame(songObj) {
@@ -219,6 +216,7 @@ function startClassicGame(songObj) {
     if (mySound) mySound.stop();
 
     document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('death-screen').classList.add('hidden');
     gameState = "PLAYING_CLASSIC";
     score = 0;
     cameraY = 0;
@@ -233,7 +231,6 @@ function startClassicGame(songObj) {
     }
 }
 
-// --- MP3 ARCADE ENGINE ---
 function loadAndStartMP3() {
     if (previewSound) previewSound.stop();
     if (mySound) mySound.stop();
@@ -242,6 +239,7 @@ function loadAndStartMP3() {
     
     mySound = loadSound(currentSongUrl, () => {
         document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('death-screen').classList.add('hidden');
         startGameMP3();
     });
 }
@@ -249,7 +247,10 @@ function loadAndStartMP3() {
 function startGameMP3() {
     tiles = []; score = 0; speed = 9; frameCount = 0; combo = 0; gameState = "PLAYING_MP3";
     tiles.push(new TileMP3(floor(random(4))));
-    mySound.play();
+    if (mySound) {
+        mySound.stop();
+        mySound.play();
+    }
 }
 
 class TileMP3 {
@@ -286,7 +287,6 @@ class TileMP3 {
 }
 
 function draw() {
-    // --- 1. MENU STATE ---
     if (gameState === "MENU") {
         background(0);
         let vol = amp.getLevel();
@@ -313,7 +313,6 @@ function draw() {
         return; 
     }
 
-    // --- 2. CLASSIC PIANO TILES 1 BOARD SCROLL DRAW ---
     if (gameState === "PLAYING_CLASSIC") {
         background(255);
         cameraY = lerp(cameraY, targetCameraY, 0.2);
@@ -324,12 +323,10 @@ function draw() {
         let rowH = height / 4;
         let colW = width / 4;
 
-        // Draw Full Grid
         stroke(200); strokeWeight(1.5);
         for (let c = 1; c < 4; c++) line(c * colW, -10000, c * colW, height + 10000);
         for (let r = -10; r < 210; r++) line(0, height - (r * rowH), width, height - (r * rowH));
 
-        // Draw Tiles
         for (let t of tiles) {
             let tileY = t.rowY;
             if (t.hit) {
@@ -342,13 +339,11 @@ function draw() {
         }
         pop();
 
-        // HUD
         fill(255, 0, 0); noStroke(); textSize(50); textAlign(CENTER);
         text(score, width / 2, 80);
         return;
     }
 
-    // --- 3. GOATED MP3 ARCADE DRAW ---
     if (gameState !== "PLAYING_MP3") return;
 
     if (pulseMode) {
@@ -401,16 +396,15 @@ function draw() {
     }
 }
 
-// INPUT ROUTING
 function mousePressed() {
-    if (gameState === "MENU") return;
+    if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
     let clickedLane = floor(mouseX / (width / 4));
     handleInput(clickedLane);
 }
 
 function keyPressed() {
-    if (gameState === "MENU") return;
+    if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = -1;
@@ -423,7 +417,7 @@ function keyPressed() {
 }
 
 function touchStarted() {
-    if (gameState === "MENU") return;
+    if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = floor(map(mouseX, 0, width, 0, 4));
@@ -493,9 +487,12 @@ function checkHitMP3(lane) {
 function triggerGameOver() {
     gameState = "GAMEOVER";
     if (synth) synth.stop();
-    if (mySound) mySound.stop();
+    if (mySound) mySound.pause();
 
-    let scoreKey = activeTab === "CLASSIC" ? "best_classic_" + activeClassicSong.name : "best_" + currentSongUrl;
+    let scoreKey = (activeTab === "CLASSIC" && activeClassicSong) 
+        ? "best_classic_" + activeClassicSong.name 
+        : "best_" + currentSongUrl;
+        
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = (score > previousBest);
 
@@ -509,8 +506,36 @@ function triggerGameOver() {
         <span style="font-size: 18px; color: #666;">BEST: ${isNewRecord ? score : previousBest}</span>
     `;
     
+    const contBtn = document.getElementById('continue-btn');
+    if (canContinue) {
+        contBtn.style.display = "block";
+    } else {
+        contBtn.style.display = "none";
+    }
+
     const deathScreen = document.getElementById('death-screen');
     deathScreen.classList.remove('hidden');
+
+    let deathButtons = deathScreen.querySelectorAll('.btn');
+    deathButtons.forEach(btn => {
+        btn.style.visibility = "visible";
+        btn.style.opacity = "1";
+    });
+}
+
+function handleRevive() {
+    document.getElementById('death-screen').classList.add('hidden');
+    tiles = []; 
+    combo = 0; 
+    
+    if (activeTab === "CLASSIC") {
+        startClassicGame(activeClassicSong);
+    } else {
+        tiles.push(new TileMP3(floor(random(4)))); 
+        gameState = "PLAYING_MP3";
+        if (mySound) mySound.play(); 
+        showFeedback("RESUMED", "#9b59b6");
+    }
 }
 
 function restartGame() {
