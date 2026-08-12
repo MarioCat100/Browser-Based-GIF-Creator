@@ -97,41 +97,53 @@ let feedbackTimer = 0;
 let mySound, amp, tiles = [], score = 0, gameState = "MENU";
 let currentSongUrl = "", speed = 9, alpha = 0;
 
-// Classical Song List for Tab 1
+// CLASSIC BOARD-SCROLL ENGINE VARIABLES
+let cameraY = 0;
+let targetCameraY = 0;
+let currentNoteIndex = 0;
+let synth;
+let activeClassicSong = null;
+
+// Classical Song List with Frequencies for Tab 1
 const classicSongs = [
-    { name: "Hikaru Nara (Your Lie in April)", color: [255, 105, 180] },
-    { name: "Ballade No. 1 (Your Lie in April)", color: [147, 112, 219] },
-    { name: "Rondo Capriccioso (Your Lie in April)", color: [255, 215, 0] },
-    { name: "Für Elise", color: [135, 206, 235] },
-    { name: "Canon in D", color: [160, 255, 210] }
+    { name: "Hikaru Nara (Your Lie in April)", notes: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], color: [255, 105, 180] },
+    { name: "Ballade No. 1 (Your Lie in April)", notes: [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25], color: [147, 112, 219] },
+    { name: "Rondo Capriccioso (Your Lie in April)", notes: [329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25], color: [255, 215, 0] },
+    { name: "Für Elise", notes: [659.25, 622.25, 659.25, 622.25, 659.25, 493.88, 587.33, 523.25, 440.00], color: [135, 206, 235] },
+    { name: "Canon in D", notes: [293.66, 220.00, 246.94, 185.00, 196.00, 146.83, 196.00, 220.00], color: [160, 255, 210] }
 ];
 
 // MP3 Song List for Tab 2
 const mySongs = [
-    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] }, // Soft Pink
-    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },   // Gold
-    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },          // Sky Blue (current)
-    { name: "3005", url: "./3005.mp3", color: [147, 112, 219] },                     // Deep Purple
-    { name: "Rather Lie", url: "./RATHER LIE.mp3", color: [173, 216, 230] },           // Light Blue
-    { name: "Do It", url: "./DO IT.mp3", color: [255, 102, 0] },                         // Orange
-    { name: "Dark Thoughts", url: "./Dark Thoughts.mp3", color: [25, 25, 112] },            // Midnight Blue
+    { name: "Legendary Lovers", url: "./Legendary Lovers.mp3", color: [255, 182, 193] },
+    { name: "Wheels Fall OFF", url: "./Wheels Fall Off.mp3", color: [255, 215, 0] },
+    { name: "Tom Cruise", url: "./Tom Cruise.mp3", color: [135, 206, 235] },
+    { name: "3005", url: "./3005.mp3", color: [147, 112, 219] },
+    { name: "Rather Lie", url: "./RATHER LIE.mp3", color: [173, 216, 230] },
+    { name: "Do It", url: "./DO IT.mp3", color: [255, 102, 0] },
+    { name: "Dark Thoughts", url: "./Dark Thoughts.mp3", color: [25, 25, 112] },
     { name: "Wavy", url: "./Wavy.mp3", color: [0, 191, 255] },
-    { name: "Jennifer", url: "./Jennifer.mp3", color: [0, 71, 49] },                        //Deep Green
-    { name: "My Way - Fetty Wap", url: "./My Way.mp3", color: [106, 13, 173] },                //classic purple
-    { name: "Kill Bill", url: "./Kill Bill.mp3", color: [38, 89, 229] },                        // Deep Blue
-    { name: "All The Love", url: "./ALL THE LOVE.mp3", color: [255, 140, 0] },                    // dark orange
-    { name: "Scott and Zelda", url: "./Scott and Zelda.mp3", color: [255, 0, 127] },                //hot pink
-    { name: "Jocelyn Flores", url: "./Jocelyn Flores.mp3", color: [100, 110, 140] },                // muted slate bluee
-    { name: "Magnetic", url: "./Magnetic.mp3", color: [160, 255, 210] },                            // glowing mint
-    { name: "Nicotine Patches", url: "./Nicotine Patches.mp3", color: [160, 0, 0] }                // Blood Red
+    { name: "Jennifer", url: "./Jennifer.mp3", color: [0, 71, 49] },
+    { name: "My Way - Fetty Wap", url: "./My Way.mp3", color: [106, 13, 173] },
+    { name: "Kill Bill", url: "./Kill Bill.mp3", color: [38, 89, 229] },
+    { name: "All The Love", url: "./ALL THE LOVE.mp3", color: [255, 140, 0] },
+    { name: "Scott and Zelda", url: "./Scott and Zelda.mp3", color: [255, 0, 127] },
+    { name: "Jocelyn Flores", url: "./Jocelyn Flores.mp3", color: [100, 110, 140] },
+    { name: "Magnetic", url: "./Magnetic.mp3", color: [160, 255, 210] },
+    { name: "Nicotine Patches", url: "./Nicotine Patches.mp3", color: [160, 0, 0] }
 ];
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
+    synth = new p5.Oscillator('sine');
+    amp = new p5.Amplitude();
     
+    renderMenu();
+}
+
+function renderMenu() {
     const home = document.getElementById('home-screen');
     
-    // Construct settings bar button styling
     let pulseBg = pulseMode ? '#2ecc71' : '#666';
     let proBg = isProMode ? '#f1c40f' : '#666';
     let proColor = isProMode ? '#000' : '#fff';
@@ -145,7 +157,6 @@ function setup() {
             'GOATED TILES' +
         '</h1>' +
         
-        '<!-- TAB BUTTONS -->' +
         '<div style="display: flex; gap: 10px; width: 90%; max-width: 400px; margin-bottom: 15px;">' +
             '<button id="tab-classic" class="tab-btn ' + (activeTab === 'CLASSIC' ? 'active' : '') + '" onclick="switchTab(\'CLASSIC\')">🎹 CLASSIC PIANO</button>' +
             '<button id="tab-mp3" class="tab-btn ' + (activeTab === 'MP3' ? 'active' : '') + '" onclick="switchTab(\'MP3\')">🔥 GOATED MP3s</button>' +
@@ -161,8 +172,6 @@ function setup() {
         '<div id="song-list"></div>';
 
     renderSongList();
-
-    amp = new p5.Amplitude();
     playMenuPreview();
 }
 
@@ -186,7 +195,7 @@ function renderSongList() {
             
             btn.onclick = () => { 
                 currentPulseColor = s.color; 
-                // We will connect Step 2 (Classic Board-Scroll Engine) here next!
+                startClassicGame(s);
             };
             
             list.appendChild(btn);
@@ -209,6 +218,30 @@ function renderSongList() {
     }
 }
 
+// --- START CLASSIC BOARD-SCROLL ENGINE ---
+function startClassicGame(songObj) {
+    activeClassicSong = songObj;
+    if (previewSound) previewSound.stop();
+    if (mySound) mySound.stop();
+
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('death-screen').classList.add('hidden');
+    
+    gameState = "PLAYING_CLASSIC";
+    score = 0;
+    cameraY = 0;
+    targetCameraY = 0;
+    currentNoteIndex = 0;
+    tiles = [];
+
+    // Pre-generate a board row track
+    let rowH = height / 4;
+    for (let r = 0; r < 200; r++) {
+        let lane = floor(random(4));
+        tiles.push({ lane: lane, yIndex: r, rowY: height - (r * rowH) - rowH, hit: false });
+    }
+}
+
 function loadAndStart() {
     if (previewSound) {
         previewSound.stop();
@@ -221,14 +254,18 @@ function loadAndStart() {
     
     mySound = loadSound(currentSongUrl, () => {
         document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('death-screen').classList.add('hidden');
         startGame();
     });
 }
 
 function startGame() {
-    tiles = []; score = 0; speed = 9; frameCount = 0; gameState = "PLAYING";
+    tiles = []; score = 0; speed = 9; frameCount = 0; combo = 0; gameState = "PLAYING";
     tiles.push(new Tile(floor(random(4))));
-    mySound.play();
+    if (mySound) {
+        mySound.stop();
+        mySound.play();
+    }
 }
 
 class Tile {
@@ -239,7 +276,7 @@ class Tile {
         this.x = this.lane * this.w;
         this.y = -this.h * 2;
         this.once = true;
-        this.isHit = false; // Tracks tap feedback
+        this.isHit = false;
         this.hitAlpha = 255;
     }
 
@@ -251,14 +288,12 @@ class Tile {
         push(); 
         
         if (this.isHit) {
-            // Piano Tiles Gray Tap Feedback
             fill(180, 180, 180, this.hitAlpha);
             stroke(220);
             strokeWeight(1);
             rect(this.x, this.y, this.w, this.h);
-            this.hitAlpha -= 40; // Quick fade out
+            this.hitAlpha -= 40; 
         } else {
-            // Main Piano Tiles Style Grid-Cell
             noStroke();
             fill(0, 30); 
             rect(this.x + 4, this.y + 4, this.w - 8, this.h - 8, 8); 
@@ -311,6 +346,38 @@ function draw() {
         return; 
     }
 
+    // --- DRAW CLASSIC BOARD-SCROLL MODE ---
+    if (gameState === "PLAYING_CLASSIC") {
+        background(255);
+        cameraY = lerp(cameraY, targetCameraY, 0.2);
+
+        push();
+        translate(0, cameraY);
+
+        let rowH = height / 4;
+        let colW = width / 4;
+
+        stroke(200); strokeWeight(1.5);
+        for (let c = 1; c < 4; c++) line(c * colW, -10000, c * colW, height + 10000);
+        for (let r = -10; r < 210; r++) line(0, height - (r * rowH), width, height - (r * rowH));
+
+        for (let t of tiles) {
+            let tileY = t.rowY;
+            if (t.hit) {
+                fill(200);
+                rect(t.lane * colW, tileY, colW, rowH);
+            } else {
+                fill(20, 20, 25);
+                rect(t.lane * colW, tileY, colW, rowH);
+            }
+        }
+        pop();
+
+        fill(255, 0, 0); noStroke(); textSize(50); textAlign(CENTER);
+        text(score, width / 2, 80);
+        return;
+    }
+
     if (gameState !== "PLAYING") return;
 
     if (pulseMode) {
@@ -327,27 +394,22 @@ function draw() {
         background(255);
     }
     
-    // PIANO TILES ACCELERATION + SPEED CAP
     alpha = min(frameCount / 100, 11.0);
     let vol = amp.getLevel();
     let varR = vol < 0.2 ? 0.8 : map(vol, 0.4, 1, 0.8, 1.2);
 
-    // --- DRAW PIANO TILES GRID (VERTICAL & HORIZONTAL LINES) ---
     stroke(220);
     strokeWeight(1.5);
     
-    // Vertical Lane Dividers
     for (let i = 1; i < 4; i++) {
         line(i * width/4, 0, i * width/4, height);
     }
     
-    // Horizontal Row Dividers (Creates the Piano Tiles grid)
     let gridStep = height / 5;
     for (let y = 0; y <= height; y += gridStep) {
         line(0, y, width, y);
     }
 
-    // --- TILES UPDATE LOOP ---
     let proMultiplier = isProMode ? 1.35 : 1.0; 
 
     for (let i = tiles.length - 1; i >= 0; i--) {
@@ -360,20 +422,17 @@ function draw() {
             tiles.push(new Tile(floor(random(4))));
         }
 
-        // Clean up faded hit tiles
         if (t.isHit && t.hitAlpha <= 0) {
             tiles.splice(i, 1);
             continue;
         }
 
-        // Missed tile check
         if (t.y > height && !t.isHit) {
             combo = 0; 
             triggerGameOver();
         }
     }
 
-    // --- HUD ---
     fill(255, 0, 0); 
     noStroke();
     textSize(50);
@@ -408,7 +467,6 @@ function draw() {
         feedbackTimer--; 
     }
 
-    // --- PRO BUTTON ---
     rectMode(CORNER); 
     fill(isProMode ? "#FFD700" : 200); 
     stroke(0);
@@ -422,16 +480,21 @@ function draw() {
     text("PRO", 60, 40); 
 }
 
-// INPUT HANDLING
+// ROUTED INPUT HANDLING
 function mousePressed() {
-    if (gameState !== "PLAYING") return;
+    if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
     let clickedLane = floor(mouseX / (width / 4));
-    checkHit(clickedLane);
+    
+    if (gameState === "PLAYING_CLASSIC") {
+        checkHitClassic(clickedLane);
+    } else if (gameState === "PLAYING") {
+        checkHit(clickedLane);
+    }
 }
 
 function keyPressed() {
-    if (gameState !== "PLAYING") return;
+    if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = -1;
@@ -440,30 +503,51 @@ function keyPressed() {
     if (key === 'w' || key === 'W' || keyCode === DOWN_ARROW)  targetLane = 2;
     if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 3; 
 
-    if (targetLane !== -1) checkHit(targetLane);
+    if (targetLane !== -1) {
+        if (gameState === "PLAYING_CLASSIC") {
+            checkHitClassic(targetLane);
+        } else if (gameState === "PLAYING") {
+            checkHit(targetLane);
+        }
+    }
 }
 
 function touchStarted() {
-    if (gameState !== "PLAYING") return;
+    if (gameState === "MENU" || gameState === "GAMEOVER") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
 
     let targetLane = floor(map(mouseX, 0, width, 0, 4));
-    
     if (targetLane >= 0 && targetLane <= 3) {
-        checkHit(targetLane);
+        if (gameState === "PLAYING_CLASSIC") {
+            checkHitClassic(targetLane);
+        } else if (gameState === "PLAYING") {
+            checkHit(targetLane);
+        }
     }
     return false; 
 }
 
-function checkHit(lane) {
-    // Find the lowest active non-hit tile
-    let t = null;
-    for (let i = 0; i < tiles.length; i++) {
-        if (!tiles[i].isHit) {
-            t = tiles[i];
-            break;
-        }
+function checkHitClassic(lane) {
+    let targetTile = tiles[score];
+    if (targetTile && targetTile.lane === lane) {
+        targetTile.hit = true;
+        score++;
+        targetCameraY += height / 4;
+
+        let noteFreq = activeClassicSong.notes[currentNoteIndex % activeClassicSong.notes.length];
+        currentNoteIndex++;
+        synth.freq(noteFreq);
+        synth.start();
+        synth.amp(0.5, 0.05);
+        setTimeout(() => synth.amp(0, 0.1), 150);
+
+    } else {
+        triggerGameOver();
     }
+}
+
+function checkHit(lane) {
+    let t = tiles[0]; 
     
     if (t && t.lane === lane) {
         if (t.y > -t.h && t.y < height) {
@@ -480,7 +564,6 @@ function checkHit(lane) {
                 showFeedback("GOOD x" + multiplier, "#2ecc71"); 
             }
 
-            // Flag tile as hit so it displays gray feedback and fades
             t.isHit = true;
         } else {
             combo = 0; 
@@ -495,6 +578,7 @@ function checkHit(lane) {
 
 function triggerGameOver() {
     gameState = "GAMEOVER";
+    if (synth) synth.stop();
     
     if (canContinue) {
         if (mySound) mySound.pause(); 
@@ -502,14 +586,10 @@ function triggerGameOver() {
         if (mySound) mySound.stop();
     }
 
-    const contBtn = document.getElementById('continue-btn');
-    if (canContinue) {
-        contBtn.style.display = "block"; 
-    } else {
-        contBtn.style.display = "none";
-    }
+    let scoreKey = (activeTab === "CLASSIC" && activeClassicSong)
+        ? "best_classic_" + activeClassicSong.name 
+        : "best_" + currentSongUrl;
 
-    let scoreKey = "best_" + currentSongUrl; 
     let previousBest = parseInt(localStorage.getItem(scoreKey)) || 0;
     let isNewRecord = (score > previousBest);
 
@@ -524,31 +604,34 @@ function triggerGameOver() {
     document.getElementById('final-score').innerHTML = 
         'SCORE: ' + score + '<br><span style="font-size: 18px; color: #666;">BEST: ' + (isNewRecord ? score : previousBest) + '</span>';
     
+    const contBtn = document.getElementById('continue-btn');
+    if (canContinue) {
+        contBtn.style.display = "block"; 
+    } else {
+        contBtn.style.display = "none";
+    }
+
     const deathScreen = document.getElementById('death-screen');
     deathScreen.classList.remove('hidden');
     
     let deathButtons = deathScreen.querySelectorAll('.btn');
-    
     deathButtons.forEach(btn => {
-        btn.style.visibility = "hidden";
-        btn.style.opacity = "0";
+        btn.style.visibility = "visible";
+        btn.style.opacity = "1";
     });
-
-    setTimeout(() => {
-        deathButtons.forEach(btn => {
-            btn.style.transition = "opacity 0.5s"; 
-            btn.style.visibility = "visible";
-            btn.style.opacity = "1";
-        });
-    }, 700); 
 }
 
 function restartGame() {
     document.getElementById('death-screen').classList.add('hidden');
-    startGame();
+    if (activeTab === "CLASSIC") {
+        startClassicGame(activeClassicSong);
+    } else {
+        startGame();
+    }
 }
 
 function goHome() {
+    if (synth) synth.stop();
     if (mySound) mySound.stop();
     gameState = "MENU";
     
@@ -557,8 +640,7 @@ function goHome() {
     const home = document.getElementById('home-screen');
     home.classList.remove('hidden');
     
-    setup();
-    playMenuPreview();
+    renderMenu();
 }
 
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
@@ -571,33 +653,37 @@ function showFeedback(txt, col) {
 
 function togglePulse() {
     pulseMode = !pulseMode; 
-    setup(); 
+    renderMenu(); 
 }
 
 function toggleControls() {
     controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK";
-    setup(); 
+    renderMenu(); 
 }
 
 function togglePro() {
     isProMode = !isProMode; 
-    setup(); 
+    renderMenu(); 
 }
 
 function togglePractice() {
     canContinue = !canContinue; 
-    setup(); 
+    renderMenu(); 
 }
 
 function handleRevive() {
     document.getElementById('death-screen').classList.add('hidden');
-    tiles = []; 
-    tiles.push(new Tile(floor(random(4)))); 
     combo = 0; 
     
-    gameState = "PLAYING";
-    if (mySound) mySound.play(); 
-    showFeedback("RESUMED", "#9b59b6");
+    if (activeTab === "CLASSIC") {
+        startClassicGame(activeClassicSong);
+    } else {
+        tiles = []; 
+        tiles.push(new Tile(floor(random(4)))); 
+        gameState = "PLAYING";
+        if (mySound) mySound.play(); 
+        showFeedback("RESUMED", "#9b59b6");
+    }
 }
 
 let previewSound; 
