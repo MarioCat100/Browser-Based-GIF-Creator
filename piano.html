@@ -81,27 +81,7 @@
     </div>
 
     <!-- SETTINGS ROW -->
-    <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; width: 95%;">
-        <button class="btn" onclick="togglePulse()" 
-            style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 85px; padding: 10px; font-size: 12px;">
-            VFX: ${pulseMode ? 'ON' : 'OFF'}
-        </button>
-
-        <button class="btn" onclick="togglePro()" 
-            style="background: ${isProMode ? '#f1c40f' : '#666'}; width: 85px; padding: 10px; font-size: 12px; color: ${isProMode ? '#000' : '#fff'};">
-            PRO: ${isProMode ? 'ON' : 'OFF'}
-        </button>
-
-        <button class="btn" onclick="togglePractice()" 
-            style="background: ${canContinue ? '#9b59b6' : '#666'}; width: 85px; padding: 10px; font-size: 11px;">
-            PRACTICE: ${canContinue ? 'ON' : 'OFF'}
-        </button>
-        
-        <button class="btn" onclick="toggleControls()" 
-            style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">
-            ${controlMode}
-        </button>
-    </div>
+    <div id="settings-bar" style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; width: 95%;"></div>
 
     <div id="song-list"></div>
 </div>
@@ -167,8 +147,34 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     synth = new p5.Oscillator('sine');
     amp = new p5.Amplitude();
+    renderSettingsBar();
     renderSongList();
     playMenuPreview();
+}
+
+function renderSettingsBar() {
+    const settings = document.getElementById('settings-bar');
+    settings.innerHTML = `
+        <button class="btn" onclick="togglePulse()" 
+            style="background: ${pulseMode ? '#2ecc71' : '#666'}; width: 85px; padding: 10px; font-size: 12px;">
+            VFX: ${pulseMode ? 'ON' : 'OFF'}
+        </button>
+
+        <button class="btn" onclick="togglePro()" 
+            style="background: ${isProMode ? '#f1c40f' : '#666'}; width: 85px; padding: 10px; font-size: 12px; color: ${isProMode ? '#000' : '#fff'};">
+            PRO: ${isProMode ? 'ON' : 'OFF'}
+        </button>
+
+        <button class="btn" onclick="togglePractice()" 
+            style="background: ${canContinue ? '#9b59b6' : '#666'}; width: 85px; padding: 10px; font-size: 11px;">
+            PRACTICE: ${canContinue ? 'ON' : 'OFF'}
+        </button>
+        
+        <button class="btn" onclick="toggleControls()" 
+            style="background: #3498db; width: 85px; padding: 10px; font-size: 12px;">
+            ${controlMode}
+        </button>
+    `;
 }
 
 function switchTab(tab) {
@@ -227,7 +233,7 @@ function startClassicGame(songObj) {
     }
 }
 
-// --- MP3 ARCADE ENGINE (Your Current Game) ---
+// --- MP3 ARCADE ENGINE ---
 function loadAndStartMP3() {
     if (previewSound) previewSound.stop();
     if (mySound) mySound.stop();
@@ -241,7 +247,7 @@ function loadAndStartMP3() {
 }
 
 function startGameMP3() {
-    tiles = []; score = 0; speed = 9; frameCount = 0; gameState = "PLAYING_MP3";
+    tiles = []; score = 0; speed = 9; frameCount = 0; combo = 0; gameState = "PLAYING_MP3";
     tiles.push(new TileMP3(floor(random(4))));
     mySound.play();
 }
@@ -386,18 +392,52 @@ function draw() {
 
     fill(255, 0, 0); noStroke(); textSize(50); textAlign(CENTER);
     text(score, width / 2, 80);
+
+    if (feedbackTimer > 0) {
+        fill(feedbackColor);
+        textSize(40);
+        text(feedbackText, width / 2, height / 2 + 50);
+        feedbackTimer--; 
+    }
 }
 
-// INPUT HANDLING
+// INPUT ROUTING
 function mousePressed() {
     if (gameState === "MENU") return;
     if (getAudioContext().state !== 'running') getAudioContext().resume();
     let clickedLane = floor(mouseX / (width / 4));
-    
+    handleInput(clickedLane);
+}
+
+function keyPressed() {
+    if (gameState === "MENU") return;
+    if (getAudioContext().state !== 'running') getAudioContext().resume();
+
+    let targetLane = -1;
+    if (key === 'a' || key === 'A' || keyCode === LEFT_ARROW)  targetLane = 0;
+    if (key === 's' || key === 'S' || keyCode === UP_ARROW)    targetLane = 1;
+    if (key === 'w' || key === 'W' || keyCode === DOWN_ARROW)  targetLane = 2;
+    if (key === 'd' || key === 'D' || keyCode === RIGHT_ARROW) targetLane = 3; 
+
+    if (targetLane !== -1) handleInput(targetLane);
+}
+
+function touchStarted() {
+    if (gameState === "MENU") return;
+    if (getAudioContext().state !== 'running') getAudioContext().resume();
+
+    let targetLane = floor(map(mouseX, 0, width, 0, 4));
+    if (targetLane >= 0 && targetLane <= 3) {
+        handleInput(targetLane);
+    }
+    return false;
+}
+
+function handleInput(lane) {
     if (gameState === "PLAYING_CLASSIC") {
-        checkHitClassic(clickedLane);
+        checkHitClassic(lane);
     } else if (gameState === "PLAYING_MP3") {
-        checkHitMP3(clickedLane);
+        checkHitMP3(lane);
     }
 }
 
@@ -408,7 +448,6 @@ function checkHitClassic(lane) {
         score++;
         targetCameraY += height / 4;
 
-        // Play Piano Note
         let noteFreq = activeClassicSong.notes[currentNoteIndex % activeClassicSong.notes.length];
         currentNoteIndex++;
         synth.freq(noteFreq);
@@ -422,20 +461,32 @@ function checkHitClassic(lane) {
 }
 
 function checkHitMP3(lane) {
-    let t = null;
-    for (let i = 0; i < tiles.length; i++) {
-        if (!tiles[i].isHit) { t = tiles[i]; break; }
-    }
+    let t = tiles[0]; 
     
     if (t && t.lane === lane) {
         if (t.y > -t.h && t.y < height) {
-            score++; combo++;
+            let distFromBottom = abs(height - (t.y + t.h));
+            let multiplier = floor(combo / 10) + 1; 
+
+            if (distFromBottom < 120) { 
+                score += (2 * multiplier); 
+                combo++; 
+                showFeedback("PERFECT x" + multiplier, "#f1c40f"); 
+            } else {
+                score += (1 * multiplier);
+                combo++; 
+                showFeedback("GOOD x" + multiplier, "#2ecc71"); 
+            }
+
             t.isHit = true;
         } else {
-            combo = 0; triggerGameOver();
+            combo = 0; 
+            score = max(0, score - 5); 
+            showFeedback("TOO EARLY!", "#e74c3c"); 
         }
     } else {
-        combo = 0; triggerGameOver();
+        combo = 0; 
+        triggerGameOver();
     }
 }
 
@@ -478,14 +529,21 @@ function goHome() {
     document.getElementById('death-screen').classList.add('hidden');
     const home = document.getElementById('home-screen');
     home.classList.remove('hidden');
+    renderSettingsBar();
     renderSongList();
     playMenuPreview();
 }
 
-function togglePulse() { pulseMode = !pulseMode; renderSongList(); }
-function toggleControls() { controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK"; renderSongList(); }
-function togglePro() { isProMode = !isProMode; renderSongList(); }
-function togglePractice() { canContinue = !canContinue; renderSongList(); }
+function showFeedback(txt, col) {
+    feedbackText = txt;
+    feedbackColor = col;
+    feedbackTimer = 25; 
+}
+
+function togglePulse() { pulseMode = !pulseMode; renderSettingsBar(); }
+function toggleControls() { controlMode = (controlMode === "CLICK") ? "KEYBOARD" : "CLICK"; renderSettingsBar(); }
+function togglePro() { isProMode = !isProMode; renderSettingsBar(); }
+function togglePractice() { canContinue = !canContinue; renderSettingsBar(); }
 
 let previewSound; 
 function playMenuPreview() {
