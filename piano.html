@@ -112,10 +112,23 @@ const classicSongs = [
     { 
         name: "Hikaru Nara (Your Lie in April)", 
         notes: [
-            "C5", "D5", "E5", "G5", "E5", "D5", "C5", "A4", "C5", "D5", "E5", "D5", "C5", "D5",
-            "C5", "D5", "E5", "G5", "E5", "D5", "C5", "A4", "C5", "D5", "E5", "C5", "A4", "G4", "A4",
-            "A4", "C5", "E5", "E5", "D5", "C5", "D5", "E5", "A4", "C5", "E5", "E5", "G5", "E5", "D5",
-            "G5", "G5", "E5", "D5", "C5", "D5", "E5", "G5", "A5", "G5", "E5", "D5", "C5", "D5", "C5"
+            // Intro Chords
+            ["C4", "E5"], ["G4", "D5"], ["A4", "C5"], ["F4", "A4"],
+            ["C4", "E5"], ["G4", "G5"], ["A4", "E5"], ["D5", "C5"],
+            
+            // Verse: "Ameagari no sora wo miageru tabi..."
+            ["C5", "E5"], "D5", ["E5", "G5"], "G5", ["E5", "C5"], "D5", "C5",
+            ["A4", "C5"], "C5", "D5", ["E5", "G5"], "D5", "C5", "D5",
+            ["C5", "E5"], "D5", ["E5", "G5"], "G5", ["E5", "C5"], "D5", "C5",
+            ["A4", "F5"], "E5", ["D5", "F5"], "C5", "A4", "G4", "A4",
+
+            // Pre-Chorus: "Kimi ga iru to mune ga takanaru..."
+            ["A4", "C5"], "C5", ["E5", "G5"], "E5", "D5", "C5", "D5", "E5",
+            ["A4", "C5"], "C5", ["E5", "G5"], "E5", "G5", "E5", "D5",
+
+            // Chorus: "Kimi da yo kimi nanda yo..."
+            ["C5", "G5"], "G5", ["E5", "G5"], "D5", "C5", "D5", ["E5", "G5"], "G5",
+            ["A5", "C6"], "G5", ["E5", "G5"], "D5", "C5", "D5", ["C5", "E5"]
         ], 
         color: [255, 105, 180] 
     },
@@ -553,11 +566,17 @@ function checkHitClassic(lane) {
         score++;
         targetCameraY += height / 4;
 
-        // Trigger Real Acoustic Grand Piano Sample
-        let noteName = activeClassicSong.notes[currentNoteIndex % activeClassicSong.notes.length];
+        // Trigger Real Acoustic Grand Piano Sample / Chords
+        let currentEntry = activeClassicSong.notes[currentNoteIndex % activeClassicSong.notes.length];
         currentNoteIndex++;
+
         if (piano) {
-            piano.play(noteName);
+            if (Array.isArray(currentEntry)) {
+                // Play all notes in the chord simultaneously
+                currentEntry.forEach(note => piano.play(note));
+            } else {
+                piano.play(currentEntry);
+            }
         }
 
     } else {
