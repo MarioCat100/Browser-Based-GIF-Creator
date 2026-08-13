@@ -417,7 +417,7 @@ function draw() {
         return; 
     }
 
-    // --- DRAW CLASSIC BOARD-SCROLL MODE ---
+    // --- DRAW CLASSIC BOARD-SCROLL MODE (INFINITE GRID) ---
     if (gameState === "PLAYING_CLASSIC") {
         background(255);
         cameraY = lerp(cameraY, targetCameraY, 0.2);
@@ -429,8 +429,16 @@ function draw() {
         let colW = width / 4;
 
         stroke(200); strokeWeight(1.5);
-        for (let c = 1; c < 4; c++) line(c * colW, -10000, c * colW, height + 10000);
-        for (let r = -10; r < 210; r++) line(0, height - (r * rowH), width, height - (r * rowH));
+        
+        // Infinite Vertical Dividers
+        for (let c = 1; c < 4; c++) line(c * colW, -50000, c * colW, height + 10000);
+        
+        // Infinite Horizontal Grid Lines mapped dynamically to active Camera Range
+        let minRow = floor((-cameraY - height) / rowH);
+        let maxRow = ceil((-cameraY + height * 2) / rowH);
+        for (let r = minRow; r <= maxRow; r++) {
+            line(0, height - (r * rowH), width, height - (r * rowH));
+        }
 
         for (let t of tiles) {
             let tileY = t.rowY;
