@@ -106,6 +106,8 @@ let currentNoteIndex = 0;
 let piano = null; // Soundfont Acoustic Piano Sampler
 let audioCtx = null;
 let activeClassicSong = null;
+let classicStartTime = 0;
+let totalClassicTiles = 200;
 
 // Classical Song List with Pitch Notation for Soundfont Piano
 const classicSongs = [
@@ -262,7 +264,7 @@ function renderSongList() {
             let savedBest = localStorage.getItem("best_classic_" + s.name) || 0;
             let btn = document.createElement('button');
             btn.className = "btn";
-            btn.innerHTML = s.name + '<br><span style="font-size: 12px; opacity: 0.7;">Best: ' + savedBest + '</span>';
+            btn.innerHTML = s.name + '<br><span style="font-size: 12px; opacity: 0.7;">Best: ' + savedBest + (savedBest > 0 ? 's' : '') + '</span>';
             
             btn.onclick = () => { 
                 currentPulseColor = s.color; 
@@ -303,11 +305,12 @@ function startClassicGame(songObj) {
     cameraY = 0;
     targetCameraY = 0;
     currentNoteIndex = 0;
+    classicStartTime = millis();
     tiles = [];
 
     // Pre-generate a board row track
     let rowH = height / 4;
-    for (let r = 0; r < 200; r++) {
+    for (let r = 0; r < totalClassicTiles; r++) {
         let lane = floor(random(4));
         tiles.push({ lane: lane, yIndex: r, rowY: height - (r * rowH) - rowH, hit: false });
     }
@@ -433,7 +436,7 @@ function draw() {
         // Infinite Vertical Dividers
         for (let c = 1; c < 4; c++) line(c * colW, -50000, c * colW, height + 10000);
         
-        // Infinite Horizontal Grid Lines mapped dynamically to active Camera Range
+        // Infinite Horizontal Grid Lines
         let minRow = floor((-cameraY - height) / rowH);
         let maxRow = ceil((-cameraY + height * 2) / rowH);
         for (let r = minRow; r <= maxRow; r++) {
@@ -625,6 +628,11 @@ function checkHitClassic(lane) {
             }
         }
 
+        // Trigger Green Completion Screen on 200th Tile
+        if (score >= totalClassicTiles) {
+            triggerVictory();
+        }
+
     } else {
         triggerGameOver();
     }
@@ -658,6 +666,37 @@ function checkHit(lane) {
         combo = 0; 
         triggerGameOver();
     }
+}
+
+function triggerVictory() {
+    gameState = "GAMEOVER";
+    let elapsedSec = ((millis() - classicStartTime) / 1000).toFixed(2);
+
+    let scoreKey = "best_classic_" + activeClassicSong.name;
+    let previousBest = parseFloat(localStorage.getItem(scoreKey)) || 0;
+    let isNewRecord = (elapsedSec < previousBest || previousBest === 0);
+
+    if (isNewRecord) {
+        localStorage.setItem(scoreKey, elapsedSec);
+    }
+
+    document.getElementById('fail-text').innerText = "SONG COMPLETED!";
+    document.getElementById('fail-text').style.color = "#ffffff"; 
+    
+    document.getElementById('final-score').innerHTML = 
+        'TIME: ' + elapsedSec + 's<br><span style="font-size: 18px; color: #fff;">BEST: ' + (isNewRecord ? elapsedSec : previousBest) + 's</span>';
+    
+    document.getElementById('continue-btn').style.display = "none";
+
+    const deathScreen = document.getElementById('death-screen');
+    deathScreen.style.background = "#2ecc71"; // Emerald Green Victory Screen
+    deathScreen.classList.remove('hidden');
+    
+    let deathButtons = deathScreen.querySelectorAll('.btn');
+    deathButtons.forEach(btn => {
+        btn.style.visibility = "visible";
+        btn.style.opacity = "1";
+    });
 }
 
 function triggerGameOver() {
@@ -695,6 +734,7 @@ function triggerGameOver() {
     }
 
     const deathScreen = document.getElementById('death-screen');
+    deathScreen.style.background = "transparent"; // Reset background back to standard overlay
     deathScreen.classList.remove('hidden');
     
     let deathButtons = deathScreen.querySelectorAll('.btn');
