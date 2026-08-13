@@ -280,13 +280,13 @@ function switchTab(tab) {
     document.getElementById('tab-mp3').className = "tab-btn " + (tab === 'MP3' ? 'active' : '');
     renderSongList();
 
-    // ONLY PLAY PREVIEW WHEN MP3 TAB IS CLICKED
+    // TRIGGER AUDIO PREVIEW ONLY WHEN MP3 TAB IS CLICKED
     if (tab === "MP3") {
         playMenuPreview();
     } else {
         if (previewSound) previewSound.stop();
         if (mySound) mySound.stop();
-        currentPulseColor = [255, 255, 255]; // Reset color back to default
+        currentPulseColor = [255, 255, 255]; // Reset color back to default white
     }
 }
 
@@ -525,8 +525,7 @@ function draw() {
         t.move(varR * proMultiplier, alpha); 
         t.show();
 
-        // 4-TILE CAP ON MP3 TAB: Only spawn a new tile if active tiles count is under 4!
-        if (t.y > -t.h + 5 && t.once && tiles.length < 4) {
+        if (t.y > -t.h + 5 && t.once) {
             t.once = false;
             tiles.push(new Tile(floor(random(4))));
         }
