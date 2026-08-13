@@ -15,6 +15,7 @@
         margin: 0; padding: 0; overflow: hidden; 
         background: transparent; /* Allows p5.js canvas to show */
         font-family: sans-serif; 
+        touch-action: manipulation; /* Prevents touch delay */
     }
 
     /* 2. THE OVERLAY */
@@ -156,7 +157,7 @@ const classicSongs = [
             // MEASURES 62-68: PIU VIVO CADENZA RUN
             "E5", "F#5", "G#5", "A5", "B5", "C6", "D6", "E6",
             ["A4", "C5", "E5", "A5"], ["G#4", "B4", "E5"], ["F#4", "A4", "D5"], ["E4", "G#4", "C#5"],
-            "E4", "F#4", "G#4", "A4", "B4", "C5", "D5", "E5",
+            "E4", "F#4", "G#4", "A4", "B4", "C5", "D5", "E5"],
             ["A3", "E4", "A4", "C5", "E5"]
         ],
         color: [178, 34, 34] // Deep Firebrick Red
@@ -323,6 +324,10 @@ function startClassicGame(songObj) {
     activeClassicSong = songObj;
     if (previewSound) previewSound.stop();
     if (mySound) mySound.stop();
+
+    if (getAudioContext().state !== 'running') {
+        getAudioContext().resume();
+    }
 
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('death-screen').classList.add('hidden');
@@ -630,27 +635,25 @@ function touchStarted() {
 function checkHitClassic(lane) {
     let targetTile = tiles[score];
     
-    // In Piano Tiles 1, as long as you click the correct column, 
-    // it hits the active tile regardless of Y position on screen!
     if (targetTile && targetTile.lane === lane) {
         targetTile.hit = true;
         score++;
         targetCameraY += height / 4;
 
-        // Trigger Real Acoustic Grand Piano Sample / Chords
+        // Optimized Soundfont Playback (Zero Delay)
         let currentEntry = activeClassicSong.notes[currentNoteIndex % activeClassicSong.notes.length];
         currentNoteIndex++;
 
         if (piano) {
+            let now = audioCtx.currentTime;
             if (Array.isArray(currentEntry)) {
-                currentEntry.forEach(note => piano.play(note));
+                currentEntry.forEach(note => piano.play(note, now));
             } else {
-                piano.play(currentEntry);
+                piano.play(currentEntry, now);
             }
         }
 
     } else {
-        // Only trigger Game Over if you tap the WRONG column
         triggerGameOver();
     }
 }
